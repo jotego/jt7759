@@ -41,7 +41,7 @@ module jt7759_ctrl(
     input             rom_ok
 );
 
-localparam STW = 10;
+localparam STW = 11;
 localparam [STW-1:0] RST    =1<<0;
 localparam [STW-1:0] IDLE   =1<<1;
 localparam [STW-1:0] SND_CNT=1<<2;
@@ -52,25 +52,35 @@ localparam [STW-1:0] MUTED  =1<<6;
 localparam [STW-1:0] LOAD   =1<<7;
 localparam [STW-1:0] READCMD=1<<8;
 localparam [STW-1:0] READADR=1<<9;
+localparam [STW-1:0] SIGN   =1<<10;
 
 localparam MTW = 13; // Mute counter 7+6 bits
 
-reg  [    7:0] snd_cnt; // sound count: total number of sound samples
+reg  [    7:0] max_snd; // sound count: total number of sound samples
 reg  [STW-1:0] st;
 reg  [    3:0] next;
 reg  [MTW-1:0] mute_cnt;
 reg  [   11:0] data_cnt;
 reg  [   15:0] addr_latch;
-reg            last_wr, waitc, getdiv;
+reg  [    7:0] sign[0:3];
+reg            last_wr, waitc, getdiv, signok, headerok;
 wire           write, wr_posedge;
+wire [    1:0] sign_addr = rom_addr[1:0]-2'd1;
 
 assign      write      = cs && !stn;
 assign      wr_posedge = !last_wr && write;
 assign      busyn      = st == IDLE;
 
+initial begin
+    sign[0] = 8'h5a;
+    sign[1] = 8'ha5;
+    sign[2] = 8'h69;
+    sign[3] = 8'h55;
+end
+
 always @(posedge clk, posedge rst) begin
     if( rst ) begin
-        snd_cnt   <= 'd0;
+        max_snd   <= 'd0;
         st        <= RST;
         rom_cs    <= 0;
         rom_addr  <= 'd0;
@@ -81,6 +91,7 @@ always @(posedge clk, posedge rst) begin
         mute_cnt  <= 0;
         data_cnt  <= 'd0;
         waitc     <= 1;
+        signok    <= 0;
     end else begin
         last_wr <= write;
         case( st )
@@ -94,12 +105,34 @@ always @(posedge clk, posedge rst) begin
                 end
                 else st <= IDLE;
             end
+            // Check the chip signature
+            SIGN: if (cen4) begin
+                waitc <= 0;
+                if( rom_ok ) begin
+                    if( rom_data != sign[sign_addr] ) begin
+                        signok <= 0;
+                        st <= IDLE;
+                        `ifdef SIMULATION
+                        $display("Wrong ROM assigned to jt7759");
+                        $finish;
+                        `endif
+                    end
+                    else begin
+                        if( &sign_addr ) begin
+                            signok <= 1;
+                            st<=IDLE;
+                        end
+                        rom_addr<= rom_addr+1'd1;
+                        waitc   <= 1;
+                    end
+                end
+            end
             IDLE: begin
                 if( wr_posedge ) begin
-                    if( din <= snd_cnt && mdn ) begin
+                    if( din <= max_snd && mdn ) begin
                         rom_cs   <= 1;
                         waitc    <= 1;
-                        rom_addr <= { 8'd0, din, 1'b1 };
+                        rom_addr <= { 7'd0, {1'd0, din} + 9'd2, 1'b1 };
                         st       <= READADR;
                     end
                 end else begin
@@ -110,9 +143,10 @@ always @(posedge clk, posedge rst) begin
             SND_CNT: begin
                 waitc <= 0;
                 if( rom_ok && !waitc ) begin
-                    snd_cnt <= rom_data;
-                    rom_cs  <= 0;
-                    st      <= IDLE;
+                    max_snd <= rom_data;
+                    rom_addr<= rom_addr+1'd1;
+                    waitc   <= 1;
+                    st      <= SIGN;
                 end
             end
             READADR: if(cen4) begin
@@ -131,7 +165,8 @@ always @(posedge clk, posedge rst) begin
                 end
             end
             LOAD: if(cen4) begin
-                rom_addr <= { addr_latch, 1'b0 };
+                rom_addr <= { addr_latch, 1'b1 };
+                headerok <= 0;
                 st       <= READCMD;
                 rom_cs   <= 1;
                 waitc    <= 1;
@@ -139,12 +174,15 @@ always @(posedge clk, posedge rst) begin
             READCMD: if(cen4) begin
                 waitc <= 0;
                 if( rom_ok && !waitc ) begin
+                    rom_addr <= rom_addr+1'b1;
+                    waitc    <= 1;
                     if( rom_data==8'd0 ) begin
-                        dec_end <= 1;
-                        st      <= IDLE;
+                        if( headerok ) begin
+                            dec_end <= 1;
+                            st      <= IDLE;
+                        end
                     end else begin
-                        rom_addr <= rom_addr+1'b1;
-                        waitc    <= 1;
+                        headerok <= 1;                     
                         case( rom_data[7:6] )
                             2'd0: begin
                                 mute_cnt <= {rom_data[5:0],7'd0};

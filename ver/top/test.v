@@ -52,21 +52,22 @@ initial begin
     din = 8'd0;
     rst = 1;
     #3000 rst=0;
-    #1000_0000 $finish;
+    //#10_000_000_0000 $finish;
 end
 
 always @(posedge clk) cen<=~cen;
 
 always @(posedge clk) begin
     last_busy <= busyn;
-    if( din==8'd2 ) $finish;
+    if( !busyn && last_busy ) begin
+        $display("Next sample");
+        din<=din+1'd1;
+    end
+    if( din>8'h10 ) $finish;
     if( busyn ) begin
         stn <= 0;
     end else begin
         stn <= 1;
-        if( busyn && !last_busy ) begin
-            din <= din + 1'b1;
-        end
     end
 end
 
