@@ -22,5 +22,7 @@ module jt7759_adpcm(
     input             cen,
     input             cendec,
     input      [ 7:0] din,
-    output reg        muted,
+    output reg        muted
 );
+
+endmodule

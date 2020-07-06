@@ -1,16 +1,16 @@
 /*  This file is part of JT7759.
     JT7759 program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
+    it under the terms of the GNU General Public Licen4se as published by
+    the Free Software Foundation, either version 3 of the Licen4se, or
     (at your option) any later version.
 
     JT7759 program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+    GNU General Public Licen4se for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with JT7759.  If not, see <http://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU General Public Licen4se
+    along with JT7759.  If not, see <http://www.gnu.org/licen4ses/>.
 
     Author: Jose Tejada Gomez. Twitter: @topapate
     Version: 1.0
@@ -19,9 +19,9 @@
 module jt7759_ctrl(
     input             rst,
     input             clk,
-    input             cen,  // 640kHz
-    output reg [ 5:0] divby,
+    input             cen4,  // 640kHz
     input             cendec,
+    output reg [ 5:0] divby,
     input             stn,  // STart (active low)
     input             cs,
     input             mdn,  // MODE: 1 for stand alone mode, 0 for slave mode
@@ -35,7 +35,7 @@ module jt7759_ctrl(
     output reg [ 3:0] dec_din,
     input             dec_done,
     // ROM interface
-    output            rom_cs,      // equivalent to DRQn in original chip
+    output reg        rom_cs,      // equivalent to DRQn in original chip
     output reg [16:0] rom_addr,
     input      [ 7:0] rom_data,
     input             rom_ok
@@ -66,6 +66,7 @@ wire           write, wr_posedge;
 
 assign      write      = cs && !stn;
 assign      wr_posedge = !last_wr && write;
+assign      busyn      = st == IDLE;
 
 always @(posedge clk, posedge rst) begin
     if( rst ) begin
@@ -73,17 +74,17 @@ always @(posedge clk, posedge rst) begin
         st        <= RST;
         rom_cs    <= 0;
         rom_addr  <= 'd0;
-        busyn     <= 0;
         divby     <= 6'd1;
         last_wr   <= 0;
         dec_rst   <= 1;
+        dec_din   <= 'd0;
         mute_cnt  <= 0;
         data_cnt  <= 'd0;
         waitc     <= 1;
     end else begin
         last_wr <= write;
         case( st )
-            default: if(cen) begin
+            default: if(cen4) begin
                 if( mdn ) begin
                     rom_addr <= 17'd0;
                     rom_cs   <= 1;
@@ -114,7 +115,7 @@ always @(posedge clk, posedge rst) begin
                     st      <= IDLE;
                 end
             end
-            READADR: if(cen) begin
+            READADR: if(cen4) begin
                 waitc <= 0;
                 if( rom_ok && !waitc ) begin
                     if( rom_addr[0] ) begin
@@ -129,13 +130,13 @@ always @(posedge clk, posedge rst) begin
                     end
                 end
             end
-            LOAD: if(cen) begin
+            LOAD: if(cen4) begin
                 rom_addr <= { addr_latch, 1'b0 };
                 st       <= READCMD;
                 rom_cs   <= 1;
                 waitc    <= 1;
             end
-            READCMD: if(cen) begin
+            READCMD: if(cen4) begin
                 waitc <= 0;
                 if( rom_ok && !waitc ) begin
                     if( rom_data==8'd0 ) begin
@@ -187,7 +188,7 @@ always @(posedge clk, posedge rst) begin
                     end
                 end
             end
-            MUTED: if( cen ) begin
+            MUTED: if( cen4 ) begin
                 if( |mute_cnt )
                     mute_cnt <= mute_cnt-1'd1;
                 else begin

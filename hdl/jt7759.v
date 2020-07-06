@@ -36,12 +36,19 @@ module jt7759(
     output signed [13:0]   sound
 );
 
-wire    [4:0] divby;
+wire   [ 5:0] divby;
 wire          cendec;    // internal clock enable for sound
+wire          cen4;      // cen divided by 4
+
+wire          dec_rst;
+wire          dec_end;
+wire   [ 3:0] dec_din;
+wire          dec_done;
 
 jt7759_div u_div(
     .clk        ( clk       ),
     .cen        ( cen       ),
+    .cen4       ( cen4      ),
     .divby      ( divby     ),
     .cendec     ( cendec    )
 );
@@ -49,7 +56,7 @@ jt7759_div u_div(
 jt7759_ctrl u_ctrl(
     .rst        ( rst       ),
     .clk        ( clk       ),
-    .cen        ( cen       ),
+    .cen4       ( cen4      ),
     .cendec     ( cendec    ),
     .divby      ( divby     ),
     // chip interface
@@ -59,12 +66,19 @@ jt7759_ctrl u_ctrl(
     .busyn      ( busyn     ),
     .wrn        ( wrn       ),
     .din        ( din       ),
+    // ADPCM engine
+    .dec_rst    ( dec_rst   ),
+    .dec_end    ( dec_end   ),
+    .dec_din    ( dec_din   ),
+    .dec_done   ( dec_done  ),
+    // ROM interface
     .rom_cs     ( rom_cs    ),
     .rom_addr   ( rom_addr  ),
     .rom_data   ( rom_data  ),
     .rom_ok     ( rom_ok    )
 );
 
+/*
 jt7759_adpcm u_adpcm(
     .rst        ( adpcm_rst ),
     .clk        ( clk       ),
@@ -72,6 +86,7 @@ jt7759_adpcm u_adpcm(
     .encoded    ( encoded   ),
     .sound      ( sound     )
 );
+*/
 
 `ifdef SIMULATION
 integer fsnd;
@@ -79,7 +94,7 @@ initial begin
     fsnd=$fopen("jt7759.raw","wb");
 end
 wire signed [15:0] snd_log = { sound, 2'b0 };
-always @(posedge cen_sr) begin
+always @(posedge cendec) begin
     $fwrite(fsnd,"%u", {snd_log, snd_log});
 end
 `endif

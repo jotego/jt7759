@@ -20,11 +20,15 @@ module jt7759_div(
     input            clk,
     input            cen,  // 640kHz
     input      [5:0] divby,
+    output reg       cen4,
     output reg       cendec
 );
 
 reg [1:0] cnt4;
 reg [5:0] cntdiv;
+wire      pre4;
+
+assign pre4 = cen && (&cnt4);
 
 `ifdef SIMULATION
 initial begin
@@ -41,7 +45,8 @@ always @(posedge clk) if(cen) begin
 end
 
 always @(posedge clk) begin
-    cendec <= cen && (&cnt4) && cntdiv==divby;
+    cen4   <= pre4;
+    cendec <= pre4 && cntdiv==divby;
 end
 
 endmodule
