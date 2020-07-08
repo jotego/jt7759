@@ -54,7 +54,7 @@ end
 
 always @(posedge clk, posedge rst ) begin
     if( rst ) begin
-        sound <= 11'd0;
+        sound <= {SW{1'd0}};
         st    <= 4'd0;
     end else if(cendec) begin
         sound <= sound + sign_ext( lut[{st,encoded}] );

@@ -63,7 +63,8 @@ reg  [    3:0] rep_cnt;
 reg  [   15:0] addr_latch;
 reg  [   16:0] rep_latch;
 reg  [    7:0] sign[0:3];
-reg            last_wr, waitc, getdiv, signok, headerok;
+reg            last_wr, waitc, getdiv, headerok;
+reg            signok; // ROM signature ok
 wire           write, wr_posedge;
 wire [   16:0] next_rom;
 wire [    1:0] sign_addr = rom_addr[1:0]-2'd1;

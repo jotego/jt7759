@@ -32,15 +32,15 @@ assign pre4 = cen && (&cnt4);
 
 `ifdef SIMULATION
 initial begin
-    cnt4   = 'd0;
-    cntdiv = 'd0;
+    cnt4   = 2'd0;
+    cntdiv = 6'd0;
 end
 `endif
 
 always @(posedge clk) if(cen) begin
     cnt4   <= cnt4+2'd1;
     if( &cnt4 ) begin
-        cntdiv <= cntdiv==divby ? 'd0 : (cntdiv+1'd1);
+        cntdiv <= cntdiv==divby ? 6'd0 : (cntdiv+1'd1);
     end
 end
 
