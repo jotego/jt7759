@@ -63,7 +63,7 @@ always @(posedge clk) begin
         $display("Next sample $%X", din);
         din<=din+1'd1;
     end
-    if( din>8'h10 ) $finish;
+    if( din>8'h3 ) $finish;
     if( busyn ) begin
         stn <= 0;
     end else begin

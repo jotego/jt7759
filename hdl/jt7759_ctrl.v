@@ -257,9 +257,6 @@ always @(posedge clk, posedge rst) begin
                 if( &data_cnt ) begin
                     // dec_rst <= 1;
                     st       <= READCMD;
-                    rom_cs   <= 1;
-                    waitc    <= 1;
-                    rom_addr <= next_rom;
                 end else if(cendec) begin
                     if( data_cnt[0] ) begin
                         if( rom_ok && !waitc ) begin
