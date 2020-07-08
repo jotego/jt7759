@@ -254,32 +254,26 @@ always @(posedge clk, posedge rst) begin
             end
             PLAY: begin
                 waitc <= 0;
-                if(cendec) begin
-                    if( &data_cnt ) begin
-                        dec_rst <= 1;
-                        if( rep_cnt[3] ) begin
-                            st      <= IDLE;
-                        end else begin
-                            st       <= READCMD;
-                            rom_cs   <= 1;
-                            waitc    <= 1;
-                            rom_addr <= rep_latch;
+                if( &data_cnt ) begin
+                    // dec_rst <= 1;
+                    st       <= READCMD;
+                    rom_cs   <= 1;
+                    waitc    <= 1;
+                    rom_addr <= next_rom;
+                end else if(cendec) begin
+                    if( data_cnt[0] ) begin
+                        if( rom_ok && !waitc ) begin
+                            { dec_din, next } <= rom_data;
+                            dec_rst           <= 0;
+                            rom_cs            <= 0;
+                            data_cnt          <= data_cnt-1'd1;
                         end
                     end else begin
-                        if( data_cnt[0] ) begin
-                            if( rom_ok && !waitc ) begin
-                                { dec_din, next } <= rom_data;
-                                dec_rst           <= 0;
-                                rom_cs            <= 0;
-                                data_cnt          <= data_cnt-1'd1;
-                            end
-                        end else begin
-                            dec_din  <= next;
-                            rom_addr <= next_rom;
-                            rom_cs   <= 1;
-                            data_cnt <= data_cnt-1'd1;
-                            waitc    <= 1;
-                        end
+                        dec_din  <= next;
+                        rom_addr <= next_rom;
+                        rom_cs   <= 1;
+                        data_cnt <= data_cnt-1'd1;
+                        waitc    <= 1;
                     end
                 end
             end
