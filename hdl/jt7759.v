@@ -33,7 +33,7 @@ module jt7759(
     input         [ 7:0]   rom_data,
     input                  rom_ok,
     // Sound output
-    output signed [13:0]   sound
+    output signed [ 8:0]   sound
 );
 
 wire   [ 5:0] divby;
@@ -41,9 +41,7 @@ wire          cendec;    // internal clock enable for sound
 wire          cen4;      // cen divided by 4
 
 wire          dec_rst;
-wire          dec_end;
-wire   [ 3:0] dec_din;
-wire          dec_done;
+wire   [ 3:0] encoded;
 
 jt7759_div u_div(
     .clk        ( clk       ),
@@ -68,9 +66,7 @@ jt7759_ctrl u_ctrl(
     .din        ( din       ),
     // ADPCM engine
     .dec_rst    ( dec_rst   ),
-    .dec_end    ( dec_end   ),
-    .dec_din    ( dec_din   ),
-    .dec_done   ( dec_done  ),
+    .dec_din    ( encoded   ),
     // ROM interface
     .rom_cs     ( rom_cs    ),
     .rom_addr   ( rom_addr  ),
@@ -78,15 +74,15 @@ jt7759_ctrl u_ctrl(
     .rom_ok     ( rom_ok    )
 );
 
-/*
+
 jt7759_adpcm u_adpcm(
-    .rst        ( adpcm_rst ),
+    .rst        ( dec_rst   ),
     .clk        ( clk       ),
     .cendec     ( cendec    ),
     .encoded    ( encoded   ),
     .sound      ( sound     )
 );
-*/
+
 
 `ifdef SIMULATION
 integer fsnd;

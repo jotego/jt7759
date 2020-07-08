@@ -18,7 +18,7 @@ wire          [16:0]   rom_addr;
 reg           [ 7:0]   rom_data;
 reg                    rom_ok;
 // Sound wire  
-wire   signed [13:0]   sound;
+wire   signed [ 8:0]   sound;
 
 reg [7:0] rom[0:(2**17)-1];
 reg       last_busy, last_cs;
@@ -60,7 +60,7 @@ always @(posedge clk) cen<=~cen;
 always @(posedge clk) begin
     last_busy <= busyn;
     if( !busyn && last_busy ) begin
-        $display("Next sample");
+        $display("Next sample $%X", din);
         din<=din+1'd1;
     end
     if( din>8'h10 ) $finish;

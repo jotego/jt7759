@@ -31,9 +31,7 @@ module jt7759_ctrl(
     input      [ 7:0] din,
     // ADPCM engine
     output reg        dec_rst,
-    output reg        dec_end,
     output reg [ 3:0] dec_din,
-    input             dec_done,
     // ROM interface
     output reg        rom_cs,      // equivalent to DRQn in original chip
     output reg [16:0] rom_addr,
@@ -60,16 +58,20 @@ reg  [    7:0] max_snd; // sound count: total number of sound samples
 reg  [STW-1:0] st;
 reg  [    3:0] next;
 reg  [MTW-1:0] mute_cnt;
-reg  [   11:0] data_cnt;
+reg  [    8:0] data_cnt;
+reg  [    3:0] rep_cnt;
 reg  [   15:0] addr_latch;
+reg  [   16:0] rep_latch;
 reg  [    7:0] sign[0:3];
 reg            last_wr, waitc, getdiv, signok, headerok;
 wire           write, wr_posedge;
+wire [   16:0] next_rom;
 wire [    1:0] sign_addr = rom_addr[1:0]-2'd1;
 
 assign      write      = cs && !stn;
 assign      wr_posedge = !last_wr && write;
 assign      busyn      = st == IDLE;
+assign      next_rom   = rom_addr+1'b1;
 
 initial begin
     sign[0] = 8'h5a;
@@ -78,20 +80,36 @@ initial begin
     sign[3] = 8'h55;
 end
 
+// Simulation log
+`ifdef SIMULATION
+`define JT7759_SILENCE $display("jt7759: read silence");
+`define JT7759_PLAY $display("jt7759: read play");
+`define JT7759_PLAY_LONG $display("jt7759: read play long");
+`define JT7759_REPEAT $display("jt7759: read repeat");
+`else
+`define JT7759_SILENCE
+`define JT7759_PLAY
+`define JT7759_PLAY_LONG
+`define JT7759_REPEAT
+`endif
+
+
 always @(posedge clk, posedge rst) begin
     if( rst ) begin
-        max_snd   <= 'd0;
+        max_snd   <= 8'd0;
         st        <= RST;
         rom_cs    <= 0;
-        rom_addr  <= 'd0;
+        rom_addr  <= 17'd0;
         divby     <= 6'd1;
         last_wr   <= 0;
         dec_rst   <= 1;
-        dec_din   <= 'd0;
+        dec_din   <= 4'd0;
         mute_cnt  <= 0;
-        data_cnt  <= 'd0;
+        data_cnt  <= 9'd0;
         waitc     <= 1;
         signok    <= 0;
+        rep_cnt   <= ~4'd0;
+        rep_latch <= 17'd0;
     end else begin
         last_wr <= write;
         case( st )
@@ -122,7 +140,7 @@ always @(posedge clk, posedge rst) begin
                             signok <= 1;
                             st<=IDLE;
                         end
-                        rom_addr<= rom_addr+1'd1;
+                        rom_addr<= next_rom;
                         waitc   <= 1;
                     end
                 end
@@ -137,14 +155,14 @@ always @(posedge clk, posedge rst) begin
                     end
                 end else begin
                     rom_cs  <= 0;
-                    if(dec_done) dec_rst <= 1;
+                    dec_rst <= 1;
                 end
             end
             SND_CNT: begin
                 waitc <= 0;
                 if( rom_ok && !waitc ) begin
                     max_snd <= rom_data;
-                    rom_addr<= rom_addr+1'd1;
+                    rom_addr<= next_rom;
                     waitc   <= 1;
                     st      <= SIGN;
                 end
@@ -153,7 +171,7 @@ always @(posedge clk, posedge rst) begin
                 waitc <= 0;
                 if( rom_ok && !waitc ) begin
                     if( rom_addr[0] ) begin
-                        rom_addr <= rom_addr+1'd1;
+                        rom_addr <= next_rom;
                         waitc    <= 1;
                         addr_latch[ 7:0] <= rom_data;
                     end else begin
@@ -170,15 +188,19 @@ always @(posedge clk, posedge rst) begin
                 st       <= READCMD;
                 rom_cs   <= 1;
                 waitc    <= 1;
+                rep_cnt  <= ~4'd0;
             end
             READCMD: if(cen4) begin
                 waitc <= 0;
                 if( rom_ok && !waitc ) begin
-                    rom_addr <= rom_addr+1'b1;
+                    rom_addr <= next_rom;
                     waitc    <= 1;
+                    if( ~&rep_cnt ) begin
+                        rep_cnt  <= rep_cnt-1'd1;
+                    end
+
                     if( rom_data==8'd0 ) begin
                         if( headerok ) begin
-                            dec_end <= 1;
                             st      <= IDLE;
                         end
                     end else begin
@@ -188,24 +210,24 @@ always @(posedge clk, posedge rst) begin
                                 mute_cnt <= {rom_data[5:0],7'd0};
                                 st       <= MUTED;
                                 rom_cs   <= 0;
+                                `JT7759_SILENCE
                             end
                             2'd1: begin
-                                data_cnt  <= 12'hFF;
+                                data_cnt  <= 8'hFF;
                                 divby     <= rom_data[5:0];
                                 st        <= PLAY;
+                                `JT7759_PLAY
                             end
-                            default: begin
-                                if( rom_data[6] ) begin                                    
-                                    getdiv   <= 1;
-                                    data_cnt[10:8] <= rom_data[2:0];
-                                end else begin
-                                    getdiv   <= 0;
-                                    divby    <= rom_data[5:0];
-                                    data_cnt[10:8] <= 3'd0;
-                                end
-                                data_cnt[11]   <= 0;
-                                data_cnt[10:8] <= rom_data[6] ? rom_data[2:0] : 3'd0;
-                                st       <= GETN;
+                            2'd2: begin
+                                divby       <= rom_data[5:0];
+                                data_cnt[8] <= 0;
+                                st          <= GETN;
+                                `JT7759_PLAY_LONG
+                            end
+                            2'd3: begin
+                                rep_cnt   <= {1'b0, rom_data[2:0]};
+                                rep_latch <= next_rom;
+                                `JT7759_REPEAT
                             end
                         endcase
                     end
@@ -214,16 +236,10 @@ always @(posedge clk, posedge rst) begin
             GETN: begin
                 waitc <= 0;
                 if( !waitc && rom_ok ) begin
-                    rom_addr <= rom_addr + 1'b1;
-                    if( getdiv ) begin
-                        getdiv   <= 0;
-                        divby    <= rom_data[5:0];
-                        waitc    <= 1;
-                    end else begin
-                        rom_cs        <= 0;
-                        data_cnt[7:0] <= rom_data;
-                        st            <= PLAY;
-                    end
+                    rom_addr <= next_rom;
+                    rom_cs        <= 0;
+                    data_cnt[7:0] <= rom_data;
+                    st            <= PLAY;
                 end
             end
             MUTED: if( cen4 ) begin
@@ -239,8 +255,15 @@ always @(posedge clk, posedge rst) begin
                 waitc <= 0;
                 if(cendec) begin
                     if( &data_cnt ) begin
-                        st      <= IDLE;
                         dec_rst <= 1;
+                        if( rep_cnt[3] ) begin
+                            st      <= IDLE;
+                        end else begin
+                            st       <= READCMD;
+                            rom_cs   <= 1;
+                            waitc    <= 1;
+                            rom_addr <= rep_latch;
+                        end
                     end else begin
                         if( data_cnt[0] ) begin
                             if( rom_ok && !waitc ) begin
@@ -251,7 +274,7 @@ always @(posedge clk, posedge rst) begin
                             end
                         end else begin
                             dec_din  <= next;
-                            rom_addr <= rom_addr+1'd1;
+                            rom_addr <= next_rom;
                             rom_cs   <= 1;
                             data_cnt <= data_cnt-1'd1;
                             waitc    <= 1;

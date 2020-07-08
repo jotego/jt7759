@@ -1,4 +1,4 @@
-# jt7759
+# JT7759
 Verilog module compatible with NEC ADPCM decoder uPD7759
 
 You can show your appreciation through
@@ -36,6 +36,40 @@ sound    | output    | 14    | signed sound output
 
 ## Usage
 
+uDP7759 ROMs have the following header:
+
+Byte  | Usage
+------|------------------
+ 0    | Number of samples
+ 1    | Must be 0x5A
+ 2    | Must be 0xA5
+ 3    | Must be 0x69
+ 4    | Must be 0x55
+
+After each reset the number of samples and the signature are read. If the signature is not correct, no samples will be played. If the verilog macro **SIMULATION** is defined, the simulation will stop if the signature is wrong.
+
+If the simulator used supports X values, you need to define the macro **SIMULATION** to avoid X's in the divider module.
+
+### Implemented Features
+
+Feature     |  Status
+------------|------------------
+Slave Mode  | Not implemented
+Master Mode | Partially implemented
+
+Features of master mode:
+
+Feature            |  Status
+-------------------|------------------
+Signature          | Implemented
+Silence            | Implemented
+Play short         | Implemented
+Play long          | Implemented
+Address latch port | Not implemented
+Repeat silence     | Not implemented
+
+Silence length is taken as a reasonable approximation to the 1ms quoted in MAME, which is also a reasonable approximation of the MAME author. In hardware the ~ 1ms is obtained as a 128 count at 640Hz/4, which makes sense from the point of view of implementation (rather than an exact 1ms).
+
 ### ROM interface
 
 Port     | Direction | Meaning
@@ -46,6 +80,8 @@ rom_data | input     | Data read from address
 rom_ok   | input     | Data read is valid
 
 Note that rom_ok is not valid for the clock cycle immediately after rising rom_cs. Or if rom_addr is changed while rom_cs is high. rom_addr must be stable once rom_cs goes high until rom_ok is asserted.
+
+Although this module is designed for usage in systems fully implemented inside an FPGA, it is possible to adapt it to work as a replacement for the original chip. In such a case, the ROM interface would need be changed in order to implement the original signal scheme.
 
 ## FPGA arcade cores using this module:
 
@@ -64,3 +100,4 @@ YM2149                 | [JT49](https://github.com/jotego/jt49)
 sn76489an              | [JT89](https://github.com/jotego/jt89)
 OKI 6295               | [JT6295](https://github.com/jotego/jt6295)
 OKI MSM5205            | [JT5205](https://github.com/jotego/jt5205)
+NEC uPN7759            | [JT7759](https://github.com/jotego/jt7759)
