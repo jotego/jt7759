@@ -114,7 +114,7 @@ always @(posedge clk, posedge rst) begin
     end else begin
         last_wr <= write;
         case( st )
-            default: if(cen4) begin
+            default: if(cen4) begin // start up process
                 if( mdn ) begin
                     rom_addr <= 17'd0;
                     rom_cs   <= 1;
@@ -203,6 +203,7 @@ always @(posedge clk, posedge rst) begin
                     if( rom_data==8'd0 ) begin
                         if( headerok ) begin
                             st      <= IDLE;
+                            dec_rst <= 1;
                         end
                     end else begin
                         headerok <= 1;                     
@@ -244,9 +245,10 @@ always @(posedge clk, posedge rst) begin
                 end
             end
             MUTED: if( cen4 ) begin
-                if( |mute_cnt )
+                dec_rst<= 1;
+                if( |mute_cnt ) begin
                     mute_cnt <= mute_cnt-1'd1;
-                else begin
+                end else begin
                     st     <= READCMD;
                     rom_cs <= 1;
                     waitc  <= 1;
@@ -257,8 +259,10 @@ always @(posedge clk, posedge rst) begin
                 if( &data_cnt ) begin
                     // dec_rst <= 1;
                     st       <= READCMD;
+                    rom_cs   <= 1;
+                    waitc    <= 1;
                 end else if(cendec) begin
-                    if( data_cnt[0] ) begin
+                    if( rom_cs ) begin
                         if( rom_ok && !waitc ) begin
                             { dec_din, next } <= rom_data;
                             dec_rst           <= 0;
