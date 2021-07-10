@@ -30,7 +30,7 @@ module jt7759_ctrl(
     input             wrn,  // for slave mode only
     input      [ 7:0] din,
     // Slave mode
-    output reg        drq,
+    output reg        drqn,
     // ADPCM engine
     output reg        dec_rst,
     output reg [ 3:0] dec_din,
@@ -122,17 +122,19 @@ always @(posedge clk, posedge rst) begin
         signok    <= 0;
         rep_cnt   <= ~4'd0;
         rep_latch <= 17'd0;
+        drqn      <= 1;
     end else begin
         last_wr  <= write;
         last_mdn <= mdn;
 
         if( mdn_posedge ) begin
-            st <= IDLE;
+            st   <= IDLE;
+            drqn <= 1;
         end
 
         if( mdn_negedge ) begin
             st       <= DREQ;
-            drq      <= 0;
+            drqn     <= 1;
             drq_ibf  <= 0;
             drq_cnt  <= 11;  // wait for ~62.5us
             divby    <= 19; // /20 = 8kHz, this is a guess. The manual doesn't tell
@@ -144,7 +146,7 @@ always @(posedge clk, posedge rst) begin
                     if( drq_cnt!=0 ) begin
                         drq_cnt <= drq_cnt-1;
                     end else if( drq_ibf==0 ) begin
-                        drq <= 1;
+                        drqn <= 0;
                     end
                 end
                 if( cendec ) begin
@@ -152,9 +154,9 @@ always @(posedge clk, posedge rst) begin
                     next    <= next2;
                     drq_ibf <= drq_ibf >> 1;
                 end
-                if( wr_posedge && drq ) begin
+                if( wr_posedge && !drqn ) begin
                     { next, next2 } <= din;
-                    drq <= 0;
+                    drqn    <= 1;
                     dec_rst <= 0;
                     drq_ibf <= 3;
                 end

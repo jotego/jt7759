@@ -26,9 +26,9 @@ module jt7759(
                                  // see chart in page 13 of PDF
     output                 busyn,
     // CPU interface
-    input                  wrn,  // for slave mode only, 31.7us after drq is set
+    input                  wrn,  // for slave mode only, 31.7us after drqn is set
     input         [ 7:0]   din,
-    output                 drq,  // data request. 50-70us delay after mdn goes low
+    output                 drqn,  // data request. 50-70us delay after mdn goes low
     // ROM interface
     output                 rom_cs,      // equivalent to DRQn in original chip
     output        [16:0]   rom_addr,
@@ -66,7 +66,7 @@ jt7759_ctrl u_ctrl(
     .busyn      ( busyn     ),
     .wrn        ( wrn       ),
     .din        ( din       ),
-    .drq        ( drq       ),
+    .drqn       ( drqn      ),
     // ADPCM engine
     .dec_rst    ( dec_rst   ),
     .dec_din    ( encoded   ),
