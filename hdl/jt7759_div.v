@@ -20,7 +20,7 @@ module jt7759_div(
     input            clk,
     input            cen,  // 640kHz
     input      [5:0] divby,
-    output reg       cen4,
+    output reg       cen4, // 160 kHz = 6.25us
     output reg       cendec
 );
 

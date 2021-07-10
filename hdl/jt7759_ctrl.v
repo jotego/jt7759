@@ -29,6 +29,8 @@ module jt7759_ctrl(
     // CPU interface
     input             wrn,  // for slave mode only
     input      [ 7:0] din,
+    // Slave mode
+    output reg        drq,
     // ADPCM engine
     output reg        dec_rst,
     output reg [ 3:0] dec_din,
@@ -39,24 +41,25 @@ module jt7759_ctrl(
     input             rom_ok
 );
 
-localparam STW = 11;
-localparam [STW-1:0] RST    =1<<0;
-localparam [STW-1:0] IDLE   =1<<1;
-localparam [STW-1:0] SND_CNT=1<<2;
-localparam [STW-1:0] PLAY   =1<<3;
-localparam [STW-1:0] WAIT   =1<<4;
-localparam [STW-1:0] GETN   =1<<5;
-localparam [STW-1:0] MUTED  =1<<6;
-localparam [STW-1:0] LOAD   =1<<7;
-localparam [STW-1:0] READCMD=1<<8;
-localparam [STW-1:0] READADR=1<<9;
-localparam [STW-1:0] SIGN   =1<<10;
+localparam STW = 12;
+localparam [STW-1:0] RST    =1<<0,
+                     IDLE   =1<<1,
+                     SND_CNT=1<<2,
+                     PLAY   =1<<3,
+                     WAIT   =1<<4,
+                     GETN   =1<<5,
+                     MUTED  =1<<6,
+                     LOAD   =1<<7,
+                     READCMD=1<<8,
+                     READADR=1<<9,
+                     SIGN   =1<<10,
+                     DREQ   =1<<11; // passive mode
 
 localparam MTW = 13; // Mute counter 7+6 bits
 
 reg  [    7:0] max_snd; // sound count: total number of sound samples
 reg  [STW-1:0] st;
-reg  [    3:0] next;
+reg  [    3:0] next, next2;
 reg  [MTW-1:0] mute_cnt;
 reg  [    8:0] data_cnt;
 reg  [    3:0] rep_cnt;
@@ -64,15 +67,23 @@ reg  [   15:0] addr_latch;
 reg  [   16:0] rep_latch;
 reg  [    7:0] sign[0:3];
 reg            last_wr, waitc, getdiv, headerok;
+reg            last_mdn;
 reg            signok; // ROM signature ok
 wire           write, wr_posedge;
 wire [   16:0] next_rom;
 wire [    1:0] sign_addr = rom_addr[1:0]-2'd1;
 
-assign      write      = cs && !stn;
-assign      wr_posedge = !last_wr && write;
-assign      busyn      = st == IDLE;
-assign      next_rom   = rom_addr+1'b1;
+// Passive mode
+wire           mdn_negedge, mdn_posedge;
+reg      [1:0] drq_ibf;
+reg      [3:0] drq_cnt;
+
+assign write       = cs && !stn;
+assign wr_posedge  = !last_wr && write;
+assign mdn_negedge =  last_mdn && !mdn;
+assign mdn_posedge = !last_mdn &&  mdn;
+assign busyn       = st == IDLE && st != DREQ;
+assign next_rom    = rom_addr+1'b1;
 
 initial begin
     sign[0] = 8'h5a;
@@ -94,7 +105,6 @@ end
 `define JT7759_REPEAT
 `endif
 
-
 always @(posedge clk, posedge rst) begin
     if( rst ) begin
         max_snd   <= 8'd0;
@@ -103,26 +113,60 @@ always @(posedge clk, posedge rst) begin
         rom_addr  <= 17'd0;
         divby     <= 6'd1;
         last_wr   <= 0;
+        last_mdn  <= 1;
         dec_rst   <= 1;
         dec_din   <= 4'd0;
         mute_cnt  <= 0;
-        data_cnt  <= 9'd0;
+        data_cnt  <= 0;
         waitc     <= 1;
         signok    <= 0;
         rep_cnt   <= ~4'd0;
         rep_latch <= 17'd0;
     end else begin
-        last_wr <= write;
-        case( st )
-            default: if(cen4) begin // start up process
-                if( mdn ) begin
-                    rom_addr <= 17'd0;
-                    rom_cs   <= 1;
-                    waitc    <= 1;
-                    dec_rst  <= 1;
-                    st       <= SND_CNT;
+        last_wr  <= write;
+        last_mdn <= mdn;
+
+        if( mdn_posedge ) begin
+            st <= IDLE;
+        end
+
+        if( mdn_negedge ) begin
+            st       <= DREQ;
+            drq      <= 0;
+            drq_ibf  <= 0;
+            drq_cnt  <= 11;  // wait for ~62.5us
+            divby    <= 19; // /20 = 8kHz, this is a guess. The manual doesn't tell
+            dec_rst  <= 1;
+        end else case( st )
+            // Passive mode
+            DREQ: begin
+                if(cen4) begin
+                    if( drq_cnt!=0 ) begin
+                        drq_cnt <= drq_cnt-1;
+                    end else if( drq_ibf==0 ) begin
+                        drq <= 1;
+                    end
                 end
-                else st <= IDLE;
+                if( cendec ) begin
+                    dec_din <= next;
+                    next    <= next2;
+                    drq_ibf <= drq_ibf >> 1;
+                end
+                if( wr_posedge && drq ) begin
+                    { next, next2 } <= din;
+                    drq <= 0;
+                    dec_rst <= 0;
+                    drq_ibf <= 3;
+                end
+            end
+
+            // Active Mode
+            default: if(cen4) begin // start up process
+                rom_addr <= 17'd0;
+                rom_cs   <= 1;
+                waitc    <= 1;
+                dec_rst  <= 1;
+                st       <= SND_CNT;
             end
             // Check the chip signature
             SIGN: if (cen4) begin
@@ -146,9 +190,9 @@ always @(posedge clk, posedge rst) begin
                     end
                 end
             end
-            IDLE: begin
+            IDLE: begin // Active mode
                 if( wr_posedge ) begin
-                    if( din <= max_snd && mdn ) begin
+                    if( din <= max_snd ) begin
                         rom_cs   <= 1;
                         waitc    <= 1;
                         rom_addr <= { 7'd0, {1'd0, din} + 9'd2, 1'b1 };
@@ -215,7 +259,7 @@ always @(posedge clk, posedge rst) begin
                                 `JT7759_SILENCE
                             end
                             2'd1: begin
-                                data_cnt  <= 8'hFF;
+                                data_cnt  <= 9'hFF;
                                 divby     <= rom_data[5:0];
                                 st        <= PLAY;
                                 `JT7759_PLAY

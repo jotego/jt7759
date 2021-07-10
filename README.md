@@ -1,4 +1,5 @@
 # JT7759
+
 Verilog module compatible with NEC ADPCM decoder uPD7759
 
 You can show your appreciation through
@@ -25,10 +26,12 @@ Device | ROM type | ROM size
 Name     | Direction | Width | Purpose
 ---------|-----------|-------|--------------------------------------
 rst      | input     |       | active-high asynchronous reset signal
-clk      | input     |       | clock
-cen      | input     |       | clock enable (positive edge).
+clk      | input     |       | clock - use the same as the sound CPU
+cen      | input     |       | clock enable
 din      | input     | 8     | input data from CPU
 dout     | output    | 8     | output data to CPU
+mdn      | input     |       | Mode selection
+drq      | output    |       | Data request
 rom_addr | output    | 18    | Memory address to be read
 rom_data | input     | 8     | Data read
 rom_ok   | input     | 1     | high when rom_data is valid and matches rom_addr
@@ -50,11 +53,13 @@ After each reset the number of samples and the signature are read. If the signat
 
 If the simulator used supports X values, you need to define the macro **SIMULATION** to avoid X's in the divider module.
 
+If used in slave mode, tie rom_ok low.
+
 ### Implemented Features
 
 Feature     |  Status
 ------------|------------------
-Slave Mode  | Not implemented
+Slave Mode  | Implemented
 Master Mode | Partially implemented
 
 Features of master mode:
@@ -101,3 +106,4 @@ sn76489an              | [JT89](https://github.com/jotego/jt89)
 OKI 6295               | [JT6295](https://github.com/jotego/jt6295)
 OKI MSM5205            | [JT5205](https://github.com/jotego/jt5205)
 NEC uPN7759            | [JT7759](https://github.com/jotego/jt7759)
+WE DSP16 (QSound)      | [JT7759](https://github.com/jotego/jtdsp16)
