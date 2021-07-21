@@ -91,6 +91,7 @@ jt7759 UUT(
     .mdn        ( mdn       ),  // MODE: 1 for stand alone mode, 0 for slave mode
     .busyn      ( busyn     ),
     .wrn        ( wrn       ),  // for slave mode only
+    .drqn       (           ),
     .din        ( din       ),
     .rom_cs     ( rom_cs    ),      // equivalent to DRQn in original chip
     .rom_addr   ( rom_addr  ),

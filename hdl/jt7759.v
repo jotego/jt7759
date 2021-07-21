@@ -18,15 +18,17 @@
 
 module jt7759(
     input                  rst,
-    input                  clk,
+    input                  clk,  // Use same clock as sound CPU
     input                  cen,  // 640kHz
     input                  stn,  // STart (active low)
     input                  cs,
     input                  mdn,  // MODE: 1 for stand alone mode, 0 for slave mode
+                                 // see chart in page 13 of PDF
     output                 busyn,
     // CPU interface
-    input                  wrn,  // for slave mode only
+    input                  wrn,  // for slave mode only, 31.7us after drqn is set
     input         [ 7:0]   din,
+    output                 drqn,  // data request. 50-70us delay after mdn goes low
     // ROM interface
     output                 rom_cs,      // equivalent to DRQn in original chip
     output        [16:0]   rom_addr,
@@ -64,6 +66,7 @@ jt7759_ctrl u_ctrl(
     .busyn      ( busyn     ),
     .wrn        ( wrn       ),
     .din        ( din       ),
+    .drqn       ( drqn      ),
     // ADPCM engine
     .dec_rst    ( dec_rst   ),
     .dec_din    ( encoded   ),
