@@ -45,6 +45,10 @@ wire          cen4;      // cen divided by 4
 wire          dec_rst;
 wire   [ 3:0] encoded;
 
+wire          ctrl_cs, ctrl_ok;
+wire   [16:0] ctrl_addr;
+wire   [ 7:0] ctrl_din;
+
 jt7759_div u_div(
     .clk        ( clk       ),
     .cen        ( cen       ),
@@ -66,17 +70,38 @@ jt7759_ctrl u_ctrl(
     .busyn      ( busyn     ),
     .wrn        ( wrn       ),
     .din        ( din       ),
-    .drqn       ( drqn      ),
     // ADPCM engine
     .dec_rst    ( dec_rst   ),
     .dec_din    ( encoded   ),
     // ROM interface
+    .rom_cs     ( ctrl_cs   ),
+    .rom_addr   ( ctrl_addr ),
+    .rom_data   ( ctrl_din  ),
+    .rom_ok     ( ctrl_ok   )
+);
+
+jt7759_data u_data(
+    .rst        ( rst       ),
+    .clk        ( clk       ),
+    .cen4       ( cen4      ),
+    .cendec     ( cendec    ),
+    .mdn        ( mdn       ),
+    // Control interface
+    .ctrl_cs    ( ctrl_cs   ),
+    .ctrl_addr  ( ctrl_addr ),
+    .ctrl_din   ( ctrl_din  ),
+    .ctrl_ok    ( ctrl_ok   ),
+    // ROM interface
     .rom_cs     ( rom_cs    ),
     .rom_addr   ( rom_addr  ),
     .rom_data   ( rom_data  ),
-    .rom_ok     ( rom_ok    )
+    .rom_ok     ( rom_ok    ),
+    // Passive interface
+    .cs         ( cs        ),
+    .wrn        ( wrn       ),
+    .din        ( din       ),
+    .drqn       ( drqn      )
 );
-
 
 jt7759_adpcm u_adpcm(
     .rst        ( dec_rst   ),
