@@ -40,18 +40,19 @@ module jt7759_data(
 );
 
 reg  [7:0] fifo;
-reg  [1:0] last_a;
+//reg  [1:0] last_a;
+reg        last_ctrl_cs;
 reg  [1:0] cnt;
 reg        fifo_ok;
-wire       achg;
+//wire       achg;
 reg        pre_drqn;
 
-assign achg     = last_a != ctrl_addr[1:0];
+//assign achg     = last_a != ctrl_addr[1:0];
 assign rom_addr = ctrl_addr;
 assign rom_cs   = mdn ? ctrl_cs  : 0;
 assign ctrl_din = mdn ? rom_data : fifo;
 assign ctrl_ok  = mdn ? rom_ok   : fifo_ok;
-assign drqn     = cnt==0 ? pre_drqn : 1;
+assign drqn     = cnt==0 || mdn ? pre_drqn : 1;
 
 always @(posedge clk, posedge rst) begin
     if( rst ) begin
@@ -62,27 +63,27 @@ always @(posedge clk, posedge rst) begin
             fifo    <= din;
             fifo_ok <= 1;
         end
-        if( achg ) fifo_ok <= 0;
+        if( !ctrl_cs ) fifo_ok <= 0;
     end
 end
 
 always @(posedge clk, posedge rst) begin
     if( rst ) begin
-        last_a  <= 1;
+        //last_a  <= 1;
         pre_drqn<= 1;
         cnt     <= 0;
+        last_ctrl_cs <= 0;
     end else begin
-        last_a <= ctrl_addr[1:0];
-        if( cen4 && cnt!=0 ) cnt<=cnt-1'd1;
-        if( !mdn ) begin
-            if( ctrl_cs && achg ) begin
-                pre_drqn <= 0;
-                cnt  <= 3;
-            end
-            if( (cs && !wrn) || !ctrl_cs ) pre_drqn <= 1;
-        end else begin
-            pre_drqn <= 1;
+        //last_a <= ctrl_addr[1:0];
+        last_ctrl_cs <= ctrl_cs;
+        if( !ctrl_cs )
+            cnt <= 3;
+        else if( cen4 && cnt!=0 )
+            cnt<=cnt-1'd1;
+        if( ctrl_cs & ~last_ctrl_cs ) begin
+            pre_drqn <= 0;
         end
+        if( (cs && !wrn) || !ctrl_cs ) pre_drqn <= 1;
     end
 end
 

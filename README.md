@@ -21,6 +21,10 @@ Device | ROM type | ROM size
  7756  |   PROM   |  256 kbit
  7759  | external | 1024 kbit
 
+### Control State Machine
+
+
+
 ## Port Description
 
 Name     | Direction | Width | Purpose
@@ -31,6 +35,7 @@ cen      | input     |       | clock enable
 din      | input     | 8     | input data from CPU
 dout     | output    | 8     | output data to CPU
 mdn      | input     |       | Mode selection
+stn      | input     |       | Start. Used only if mdn is low.
 drq      | output    |       | Data request
 rom_addr | output    | 18    | Memory address to be read
 rom_data | input     | 8     | Data read

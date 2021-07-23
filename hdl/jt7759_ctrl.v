@@ -33,7 +33,7 @@ module jt7759_ctrl(
     output reg        dec_rst,
     output reg [ 3:0] dec_din,
     // ROM interface
-    output reg        rom_cs,      // equivalent to DRQn in original chip
+    output            rom_cs,      // equivalent to DRQn in original chip
     output reg [16:0] rom_addr,
     input      [ 7:0] rom_data,
     input             rom_ok
@@ -69,12 +69,14 @@ wire           write, wr_posedge;
 wire [   16:0] next_rom;
 wire [    1:0] sign_addr = rom_addr[1:0]-2'd1;
 wire           data_good;
+reg            pre_cs, pulse_cs;
 
-assign      write      = cs && !stn;
+assign      write      = cs && (!mdn || !stn );
 assign      wr_posedge = !last_wr && write;
 assign      busyn      = st == IDLE;
 assign      next_rom   = rom_addr+1'b1;
 assign      data_good  = mdn ? (rom_ok & !waitc) : rom_ok;
+assign      rom_cs     = pre_cs & ~pulse_cs;
 
 initial begin
     sign[0] = 8'h5a;
@@ -101,7 +103,7 @@ always @(posedge clk, posedge rst) begin
     if( rst ) begin
         max_snd   <= 8'd0;
         st        <= RST;
-        rom_cs    <= 0;
+        pre_cs    <= 0;
         rom_addr  <= 17'd0;
         divby     <= 6'd1;
         last_wr   <= 0;
@@ -113,183 +115,193 @@ always @(posedge clk, posedge rst) begin
         signok    <= 0;
         rep_cnt   <= ~4'd0;
         rep_latch <= 17'd0;
+        headerok  <= 0;
+        addr_latch<= 0;
+        pulse_cs  <= 0;
     end else begin
         last_wr <= write;
-        case( st )
-            default: if(cen4) begin // start up process
-                if( mdn ) begin
-                    rom_addr <= 17'd0;
-                    rom_cs   <= 1;
-                    waitc    <= 1;
-                    dec_rst  <= 1;
-                    st       <= SND_CNT;
-                end
-                else st <= IDLE;
-            end
-            // Check the chip signature
-            SIGN: if (cen4) begin
-                waitc <= 0;
-                if( !mdn ) begin
-                    st <= READADR;
-                    rom_addr[0] <= ~rom_addr[0];
-                end else begin
-                    if( rom_ok ) begin
-                        if( rom_data != sign[sign_addr] ) begin
-                            signok <= 0;
-                            st <= IDLE;
-                            `ifdef SIMULATION
-                            $display("Wrong ROM assigned to jt7759");
-                            $finish;
-                            `endif
-                        end
-                        else begin
-                            if( &sign_addr ) begin
-                                signok <= 1;
-                                st<=IDLE;
-                            end
-                            rom_addr<= next_rom;
-                            waitc   <= 1;
-                        end
-                    end
-                end
-            end
-            IDLE: begin
-                if( wr_posedge ) begin
-                    if( din <= max_snd && mdn ) begin
-                        rom_cs   <= 1;
+        if( pulse_cs ) begin
+            if( cen4 ) pulse_cs <= 0;
+        end else begin
+            case( st )
+                default: if(cen4) begin // start up process
+                    if( mdn ) begin
+                        rom_addr <= 17'd0;
+                        pre_cs   <= 1;
                         waitc    <= 1;
-                        rom_addr <= { 7'd0, {1'd0, din} + 9'd2, 1'b1 };
-                        st       <= READADR;
+                        dec_rst  <= 1;
+                        //st       <= SND_CNT; // Reads the ROM header
+                        st       <= IDLE;
                     end
+                    else st <= IDLE;
+                end
+                // Check the chip signature
+                SIGN: if (cen4) begin
+                    waitc <= 0;
                     if( !mdn ) begin
-                        rom_cs <= 1;
-                        waitc  <= 1;
-                        st     <= READCMD;
-                    end
-                end else begin
-                    rom_cs  <= 0;
-                    dec_rst <= 1;
-                end
-            end
-            SND_CNT: begin
-                waitc <= 0;
-                if( data_good ) begin
-                    max_snd <= rom_data;
-                    rom_addr<= next_rom;
-                    waitc   <= 1;
-                    st      <= SIGN;
-                end
-            end
-            READADR: if(cen4) begin
-                waitc <= 0;
-                if( data_good ) begin
-                    if( rom_addr[0] ) begin
-                        rom_addr <= next_rom;
-                        waitc    <= 1;
-                        addr_latch[ 7:0] <= rom_data;
+                        st <= READADR;
+                        rom_addr[0] <= ~rom_addr[0];
                     end else begin
-                        addr_latch[15:8] <= addr_latch[7:0];
-                        addr_latch[ 7:0] <= rom_data;
-                        st               <= LOAD;
-                        rom_cs           <= 0;
-                    end
-                end
-            end
-            LOAD: if(cen4) begin
-                rom_addr <= { addr_latch, 1'b1 };
-                headerok <= 0;
-                st       <= READCMD;
-                rom_cs   <= 1;
-                waitc    <= 1;
-                rep_cnt  <= ~4'd0;
-            end
-            READCMD: if(cen4) begin
-                waitc <= 0;
-                if( data_good ) begin
-                    rom_addr <= next_rom;
-                    waitc    <= 1;
-                    if( ~&rep_cnt ) begin
-                        rep_cnt  <= rep_cnt-1'd1;
-                    end
-
-                    if(rom_data!=0)
-                        headerok <= 1;
-                    case( rom_data[7:6] )
-                        2'd0: if(headerok) begin
-                            mute_cnt <= {rom_data[5:0],7'd0};
-                            if( rom_data==0 ) begin
+                        if( rom_ok ) begin
+                            if( rom_data != sign[sign_addr] ) begin
+                                signok <= 0;
                                 st <= IDLE;
-                                dec_rst <= 1;
-                            end else begin
-                                st <= MUTED;
+                                `ifdef SIMULATION
+                                $display("Wrong ROM assigned to jt7759");
+                                $finish;
+                                `endif
                             end
-                            rom_cs   <= 0;
-                            `JT7759_SILENCE
+                            else begin
+                                if( &sign_addr ) begin
+                                    signok <= 1;
+                                    st<=IDLE;
+                                end
+                                rom_addr<= next_rom;
+                                waitc   <= 1;
+                            end
                         end
-                        2'd1: begin
-                            data_cnt  <= 8'hFF;
-                            divby     <= rom_data[5:0];
-                            st        <= PLAY;
-                            `JT7759_PLAY
-                        end
-                        2'd2: begin
-                            divby       <= rom_data[5:0];
-                            data_cnt[8] <= 0;
-                            st          <= GETN;
-                            `JT7759_PLAY_LONG
-                        end
-                        2'd3: begin
-                            rep_cnt   <= {1'b0, rom_data[2:0]};
-                            rep_latch <= next_rom;
-                            `JT7759_REPEAT
-                        end
-                    endcase
-                end
-            end
-            GETN: begin
-                waitc <= 0;
-                if( data_good ) begin
-                    rom_addr <= next_rom;
-                    rom_cs        <= 0;
-                    data_cnt[7:0] <= rom_data;
-                    st            <= PLAY;
-                end
-            end
-            MUTED: if( cen4 ) begin
-                dec_rst<= 1;
-                if( |mute_cnt ) begin
-                    mute_cnt <= mute_cnt-1'd1;
-                end else begin
-                    st     <= READCMD;
-                    rom_cs <= 1;
-                    waitc  <= 1;
-                end
-            end
-            PLAY: begin
-                waitc <= 0;
-                if( &data_cnt ) begin
-                    // dec_rst <= 1;
-                    st       <= READCMD;
-                    rom_cs   <= 1;
-                    waitc    <= 1;
-                end else if(cendec) begin
-                    if( rom_cs ) begin
-                        if( data_good ) begin
-                            { dec_din, next } <= rom_data;
-                            dec_rst           <= 0;
-                            rom_cs            <= 0;
-                            data_cnt          <= data_cnt-1'd1;
-                        end
-                    end else begin
-                        dec_din  <= next;
-                        rom_addr <= next_rom;
-                        rom_cs   <= 1;
-                        data_cnt <= data_cnt-1'd1;
-                        waitc    <= 1;
                     end
                 end
-            end
-        endcase
+                IDLE: begin
+                    if( wr_posedge ) begin
+                        //if( din <= max_snd || !mdn ) begin
+                            pre_cs   <= 1;
+                            pulse_cs <= 1;
+                            waitc    <= 1;
+                            rom_addr <= { 7'd0, {1'd0, din} + 9'd2, 1'b1 };
+                            st       <= READADR;
+                        //end
+                    end else begin
+                        pre_cs  <= 0;
+                        dec_rst <= 1;
+                    end
+                end
+                SND_CNT: begin
+                    waitc <= 0;
+                    if( data_good ) begin
+                        max_snd <= rom_data;
+                        rom_addr<= next_rom;
+                        waitc   <= 1;
+                        st      <= SIGN;
+                    end
+                end
+                READADR: if(cen4) begin
+                    waitc <= 0;
+                    if( data_good ) begin
+                        if( rom_addr[0] ) begin
+                            rom_addr <= next_rom;
+                            waitc    <= 1;
+                            addr_latch[ 7:0] <= rom_data;
+                        end else begin
+                            addr_latch[15:8] <= addr_latch[7:0];
+                            addr_latch[ 7:0] <= rom_data;
+                            st               <= LOAD;
+                            pre_cs           <= 0;
+                        end
+                    end
+                end
+                LOAD: if(cen4) begin
+                    rom_addr <= { addr_latch, 1'b1 };
+                    headerok <= 0;
+                    st       <= READCMD;
+                    pre_cs   <= 1;
+                    pulse_cs <= 1;
+                    waitc    <= 1;
+                    rep_cnt  <= ~4'd0;
+                end
+                READCMD: if(cen4) begin
+                    waitc <= 0;
+                    if( data_good ) begin
+                        rom_addr <= next_rom;
+                        waitc    <= 1;
+                        pre_cs   <= 1;
+                        pulse_cs <= 1;
+                        if( ~&rep_cnt ) begin
+                            rep_cnt  <= rep_cnt-1'd1;
+                        end
+
+                        if(rom_data!=0)
+                            headerok <= 1;
+                        case( rom_data[7:6] )
+                            2'd0: if(headerok) begin
+                                mute_cnt <= {rom_data[5:0],7'd0};
+                                if( rom_data==0 ) begin
+                                    st <= IDLE;
+                                    dec_rst <= 1;
+                                end else begin
+                                    st <= MUTED;
+                                end
+                                pre_cs   <= 0;
+                                `JT7759_SILENCE
+                            end
+                            2'd1: begin
+                                data_cnt  <= 8'hFF;
+                                divby     <= rom_data[5:0];
+                                st        <= PLAY;
+                                `JT7759_PLAY
+                            end
+                            2'd2: begin
+                                divby       <= rom_data[5:0];
+                                data_cnt[8] <= 0;
+                                st          <= GETN;
+                                `JT7759_PLAY_LONG
+                            end
+                            2'd3: begin
+                                rep_cnt   <= {1'b0, rom_data[2:0]};
+                                rep_latch <= next_rom;
+                                `JT7759_REPEAT
+                            end
+                        endcase
+                    end
+                end
+                GETN: begin
+                    waitc <= 0;
+                    if( data_good ) begin
+                        rom_addr <= next_rom;
+                        pre_cs        <= 0;
+                        data_cnt[7:0] <= rom_data;
+                        st            <= PLAY;
+                    end
+                end
+                MUTED: if( cen4 ) begin
+                    dec_rst<= 1;
+                    if( |mute_cnt ) begin
+                        mute_cnt <= mute_cnt-1'd1;
+                    end else begin
+                        st     <= READCMD;
+                        pre_cs <= 1;
+                        pulse_cs <= 1;
+                        waitc  <= 1;
+                    end
+                end
+                PLAY: begin
+                    waitc <= 0;
+                    if( &data_cnt ) begin
+                        // dec_rst <= 1;
+                        st       <= READCMD;
+                        pre_cs   <= 1;
+                        pulse_cs <= 1;
+                        waitc    <= 1;
+                    end else if(cendec) begin
+                        if( pre_cs ) begin
+                            if( data_good ) begin
+                                { dec_din, next } <= rom_data;
+                                dec_rst           <= 0;
+                                pre_cs            <= 0;
+                                data_cnt          <= data_cnt-1'd1;
+                            end
+                        end else begin
+                            dec_din  <= next;
+                            rom_addr <= next_rom;
+                            pre_cs   <= 1;
+                            pulse_cs <= 1;
+                            data_cnt <= data_cnt-1'd1;
+                            waitc    <= 1;
+                        end
+                    end
+                end
+            endcase
+        end // pulse_cen
     end
 end
 
