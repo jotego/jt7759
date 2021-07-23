@@ -225,7 +225,7 @@ always @(posedge clk, posedge rst) begin
                         if(rom_data!=0)
                             headerok <= 1;
                         case( rom_data[7:6] )
-                            2'd0: if(headerok) begin
+                            2'd0: if(headerok) begin // Silence
                                 mute_cnt <= {rom_data[5:0],7'd0};
                                 if( rom_data==0 ) begin
                                     st <= IDLE;
@@ -236,19 +236,19 @@ always @(posedge clk, posedge rst) begin
                                 pre_cs   <= 0;
                                 `JT7759_SILENCE
                             end
-                            2'd1: begin
+                            2'd1: begin // 256 nibbles
                                 data_cnt  <= 8'hFF;
                                 divby     <= rom_data[5:0];
                                 st        <= PLAY;
                                 `JT7759_PLAY
                             end
-                            2'd2: begin
-                                divby       <= rom_data[5:0];
+                            2'd2: begin // n nibbles
                                 data_cnt[8] <= 0;
+                                divby       <= rom_data[5:0];
                                 st          <= GETN;
                                 `JT7759_PLAY_LONG
                             end
-                            2'd3: begin
+                            2'd3: begin // repeat loop
                                 rep_cnt   <= {1'b0, rom_data[2:0]};
                                 rep_latch <= next_rom;
                                 `JT7759_REPEAT
