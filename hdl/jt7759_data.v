@@ -79,7 +79,7 @@ always @(posedge clk, posedge rst) begin
         //last_a <= ctrl_addr[1:0];
         last_ctrl_cs <= ctrl_cs;
         if( !ctrl_cs )
-            cnt <= 3;
+            cnt <= 2;
         else if( cen4 && cnt!=0 )
             cnt<=cnt-1'd1;
         if( ctrl_cs & ~last_ctrl_cs ) begin

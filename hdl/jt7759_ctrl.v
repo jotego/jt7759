@@ -263,9 +263,9 @@ always @(posedge clk, posedge rst) begin
                     waitc <= 0;
                     if( data_good ) begin
                         rom_addr <= next_rom;
-                        pre_cs        <= 0;
-                        data_cnt[7:0] <= rom_data;
-                        st            <= PLAY;
+                        pre_cs   <= 0;
+                        data_cnt <= {1'b0, rom_data};
+                        st       <= PLAY;
                     end
                 end
                 MUTED: if( cen4 ) begin
