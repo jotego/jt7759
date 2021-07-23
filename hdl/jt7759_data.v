@@ -45,7 +45,7 @@ reg        last_ctrl_cs;
 reg  [1:0] cnt;
 reg        fifo_ok;
 //wire       achg;
-reg        pre_drqn;
+reg        pre_drqn, last_wrn;
 
 //assign achg     = last_a != ctrl_addr[1:0];
 assign rom_addr = ctrl_addr;
@@ -58,8 +58,10 @@ always @(posedge clk, posedge rst) begin
     if( rst ) begin
         fifo_ok <= 0;
         fifo    <= 0;
+        last_wrn<= 1;
     end else begin
-        if( cs && !wrn ) begin
+        last_wrn <= wrn;
+        if( cs && !wrn && last_wrn ) begin
             fifo    <= din;
             fifo_ok <= 1;
         end
