@@ -91,11 +91,13 @@ end
 `define JT7759_PLAY $display("jt7759: read play");
 `define JT7759_PLAY_LONG $display("jt7759: read play long");
 `define JT7759_REPEAT $display("jt7759: read repeat");
+`define JT7759_DONE $display("jt7759: sample done");
 `else
 `define JT7759_SILENCE
 `define JT7759_PLAY
 `define JT7759_PLAY_LONG
 `define JT7759_REPEAT
+`define JT7759_DONE
 `endif
 
 
@@ -225,16 +227,17 @@ always @(posedge clk, posedge rst) begin
                         if(rom_data!=0)
                             headerok <= 1;
                         case( rom_data[7:6] )
-                            2'd0: if(headerok) begin // Silence
+                            2'd0: begin // Silence
+                                `JT7759_SILENCE
                                 mute_cnt <= {rom_data[5:0],7'd0};
-                                if( rom_data==0 ) begin
+                                if( rom_data==0 && headerok) begin
                                     st <= IDLE;
                                     dec_rst <= 1;
+                                    `JT7759_DONE
                                 end else begin
                                     st <= MUTED;
                                 end
-                                pre_cs   <= 0;
-                                `JT7759_SILENCE
+                                pre_cs  <= 0;
                             end
                             2'd1: begin // 256 nibbles
                                 data_cnt  <= 8'hFF;
@@ -267,7 +270,7 @@ always @(posedge clk, posedge rst) begin
                 end
                 MUTED: if( cen4 ) begin
                     dec_rst<= 1;
-                    if( |mute_cnt ) begin
+                    if( mute_cnt != 0 ) begin
                         mute_cnt <= mute_cnt-1'd1;
                     end else begin
                         st     <= READCMD;
