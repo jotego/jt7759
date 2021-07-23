@@ -127,9 +127,11 @@ always @(posedge clk, posedge rst) begin
                 default: if(cen4) begin // start up process
                     if( mdn ) begin
                         rom_addr <= 17'd0;
-                        pre_cs   <= 1;
-                        waitc    <= 1;
+                        pre_cs   <= 0;
+                        waitc    <= 0;
                         dec_rst  <= 1;
+                        //pre_cs   <= 1;
+                        //waitc    <= 1;
                         //st       <= SND_CNT; // Reads the ROM header
                         st       <= IDLE;
                     end
