@@ -73,7 +73,7 @@ reg            pre_cs, pulse_cs;
 
 assign      write      = cs && (!mdn || !stn );
 assign      wr_posedge = !last_wr && write;
-assign      busyn      = st == IDLE;
+assign      busyn      = st == IDLE || st == RST || !mdn;
 assign      next_rom   = rom_addr+1'b1;
 assign      data_good  = mdn ? (rom_ok & !waitc) : rom_ok;
 assign      rom_cs     = pre_cs & ~pulse_cs;
