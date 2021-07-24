@@ -240,7 +240,7 @@ always @(posedge clk, posedge rst) begin
                                 pre_cs  <= 0;
                             end
                             2'd1: begin // 256 nibbles
-                                data_cnt  <= 8'hFF;
+                                data_cnt  <= 9'hFF;
                                 divby     <= rom_data[5:0];
                                 st        <= PLAY;
                                 `JT7759_PLAY
@@ -281,27 +281,30 @@ always @(posedge clk, posedge rst) begin
                 end
                 PLAY: begin
                     waitc <= 0;
-                    if( &data_cnt ) begin
-                        // dec_rst <= 1;
-                        st       <= READCMD;
-                        //pre_cs   <= 1;
-                        //pulse_cs <= 1;
-                        //waitc    <= 1;
-                    end else if(cen_dec) begin
+                    if(cen_dec) begin
                         if( pre_cs ) begin
                             if( data_good ) begin
                                 { dec_din, next } <= rom_data;
                                 dec_rst           <= 0;
                                 pre_cs            <= 0;
                                 data_cnt          <= data_cnt-1'd1;
+                                if( data_cnt==0 ) begin
+                                    pre_cs   <= 1;
+                                    pulse_cs <= 1;
+                                    waitc    <= 1;
+                                    st       <= READCMD;
+                                end
                             end
                         end else begin
                             dec_din  <= next;
                             rom_addr <= next_rom;
                             pre_cs   <= 1;
                             pulse_cs <= 1;
-                            data_cnt <= data_cnt-1'd1;
                             waitc    <= 1;
+                            data_cnt <= data_cnt-1'd1;
+                            if( data_cnt==0 ) begin
+                                st <= READCMD;
+                            end
                         end
                     end
                 end
