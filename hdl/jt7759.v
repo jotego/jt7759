@@ -36,6 +36,12 @@ module jt7759(
     input                  rom_ok,
     // Sound output
     output signed [ 8:0]   sound
+
+`ifdef DEBUG
+    ,output [3:0] debug_nibble
+    ,output       debug_cen_dec
+    ,output       debug_dec_rst
+`endif
 );
 
 wire   [ 5:0] divby;
@@ -48,6 +54,13 @@ wire   [ 3:0] encoded;
 wire          ctrl_cs, ctrl_ok;
 wire   [16:0] ctrl_addr;
 wire   [ 7:0] ctrl_din;
+
+
+`ifdef DEBUG
+    assign debug_nibble  = encoded;
+    assign debug_cen_dec = cen_dec;
+    assign debug_dec_rst = dec_rst;
+`endif
 
 jt7759_div u_div(
     .clk        ( clk       ),

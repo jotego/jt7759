@@ -69,7 +69,7 @@ always @(posedge clk, posedge rst) begin
         drqn     <= 1;
         readin_l <= 0;
         good_l   <= 0;
-    end else if(cen_ctl) begin
+    end else begin
         readin_l <= readin;
         good_l   <= good;
 
