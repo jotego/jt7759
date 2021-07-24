@@ -91,6 +91,7 @@ jt7759_data u_data(
     .ctrl_addr  ( ctrl_addr ),
     .ctrl_din   ( ctrl_din  ),
     .ctrl_ok    ( ctrl_ok   ),
+    .ctrl_busyn ( busyn     ),
     // ROM interface
     .rom_cs     ( rom_cs    ),
     .rom_addr   ( rom_addr  ),

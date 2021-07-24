@@ -284,9 +284,9 @@ always @(posedge clk, posedge rst) begin
                     if( &data_cnt ) begin
                         // dec_rst <= 1;
                         st       <= READCMD;
-                        pre_cs   <= 1;
-                        pulse_cs <= 1;
-                        waitc    <= 1;
+                        //pre_cs   <= 1;
+                        //pulse_cs <= 1;
+                        //waitc    <= 1;
                     end else if(cen_dec) begin
                         if( pre_cs ) begin
                             if( data_good ) begin

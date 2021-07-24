@@ -23,69 +23,94 @@ module jt7759_data(
     input             cen_dec,
     input             mdn,
     // Control interface
-    input             ctrl_cs,      // equivalent to DRQn in original chip
+    input             ctrl_cs,
+    input             ctrl_busyn,
     input      [16:0] ctrl_addr,
-    output     [ 7:0] ctrl_din,
-    output            ctrl_ok,
+    output reg [ 7:0] ctrl_din,
+    output reg        ctrl_ok,
     // ROM interface
-    output            rom_cs,      // equivalent to DRQn in original chip
-    output     [16:0] rom_addr,
+    output            rom_cs,
+    output reg [16:0] rom_addr,
     input      [ 7:0] rom_data,
     input             rom_ok,
     // Passive interface
     input             cs,
     input             wrn,  // for slave mode only
     input      [ 7:0] din,
-    output            drqn
+    output reg        drqn
 );
 
-reg  [7:0] fifo;
-//reg  [1:0] last_a;
-reg        last_ctrl_cs;
-reg  [1:0] cnt;
-reg        fifo_ok;
-//wire       achg;
-reg        pre_drqn, last_wrn;
+reg  [7:0] fifo[4];
+reg  [3:0] fifo_ok;
+reg        drqn_l, ctrl_cs_l;
+reg  [1:0] rd_addr, wr_addr;
+reg        readin, readout;
 
-//assign achg     = last_a != ctrl_addr[1:0];
-assign rom_addr = ctrl_addr;
-assign rom_cs   = mdn ? ctrl_cs  : 0;
-assign ctrl_din = mdn ? rom_data : fifo;
-assign ctrl_ok  = mdn ? rom_ok   : fifo_ok;
-assign drqn     = cnt==0 || mdn ? pre_drqn : 1;
+wire       good    = mdn ? rom_ok & ~drqn_l & ~drqn : (cs&~wrn);
+wire [7:0] din_mux = mdn ? rom_data : din;
+
+assign rom_cs  = mdn && !drqn;
 
 always @(posedge clk, posedge rst) begin
     if( rst ) begin
-        fifo_ok <= 0;
-        fifo    <= 0;
-        last_wrn<= 1;
-    end else begin
-        last_wrn <= wrn;
-        if( cs && !wrn && last_wrn ) begin
-            fifo    <= din;
-            fifo_ok <= 1;
+        fifo_ok  <= 0;
+        rom_addr <= 0;
+        drqn     <= 1;
+    end else if(cen_ctl) begin
+        if( ctrl_busyn ) begin
+            fifo_ok <= 0;
+        end else begin
+            if(fifo_ok!=4'hf) begin
+                drqn <= ~drqn;
+                if( drqn ) rom_addr <= rom_addr + 1;
+            end else begin
+                drqn <= 1;
+            end
         end
-        if( !ctrl_cs ) fifo_ok <= 0;
     end
 end
 
 always @(posedge clk, posedge rst) begin
     if( rst ) begin
-        //last_a  <= 1;
-        pre_drqn<= 1;
-        cnt     <= 0;
-        last_ctrl_cs <= 0;
+        rd_addr   <= 0;
+        ctrl_cs_l <= 0;
+        readout   <= 0;
+        ctrl_ok   <= 0;
     end else begin
-        //last_a <= ctrl_addr[1:0];
-        last_ctrl_cs <= ctrl_cs;
-        if( !ctrl_cs )
-            cnt <= 2;
-        else if( cen_ctl && cnt!=0 )
-            cnt<=cnt-1'd1;
-        if( ctrl_cs & ~last_ctrl_cs ) begin
-            pre_drqn <= 0;
+        ctrl_cs_l <= ctrl_cs;
+        if( ctrl_cs && !ctrl_cs_l ) begin
+            readout <= 1;
+            ctrl_ok <= 0;
         end
-        if( (cs && !wrn) || !ctrl_cs ) pre_drqn <= 1;
+        if( readout && fifo_ok[rd_addr] ) begin
+            ctrl_din <= fifo[ rd_addr ];
+            ctrl_ok  <= 1;
+            rd_addr  <= rd_addr + 1'd1;
+            fifo_ok[ rd_addr ] <= 0;
+            readout  <= 0;
+        end
+        if( !ctrl_cs ) begin
+            readout <= 0;
+            ctrl_ok <= 0;
+        end
+    end
+end
+
+always @(posedge clk, posedge rst) begin
+    if( rst ) begin
+        wr_addr <= 0;
+        drqn_l  <= 1;
+    end else begin
+        drqn_l <= drqn;
+        if( !drqn && drqn_l ) begin
+            readin <= 1;
+        end
+        if( good && readin ) begin
+            fifo[ wr_addr ] <= din_mux;
+            fifo_ok[ wr_addr ] <= 1;
+            wr_addr <= wr_addr + 1;
+            readin  <= 0;
+        end
     end
 end
 
