@@ -39,8 +39,8 @@ module jt7759(
 );
 
 wire   [ 5:0] divby;
-wire          cendec;    // internal clock enable for sound
-wire          cen4;      // cen divided by 4
+wire          cen_dec;    // internal clock enable for sound
+wire          cen_ctl;    // cen_dec x4
 
 wire          dec_rst;
 wire   [ 3:0] encoded;
@@ -52,16 +52,16 @@ wire   [ 7:0] ctrl_din;
 jt7759_div u_div(
     .clk        ( clk       ),
     .cen        ( cen       ),
-    .cen4       ( cen4      ),
+    .cen_ctl    ( cen_ctl   ),
     .divby      ( divby     ),
-    .cendec     ( cendec    )
+    .cen_dec    ( cen_dec   )
 );
 
 jt7759_ctrl u_ctrl(
     .rst        ( rst       ),
     .clk        ( clk       ),
-    .cen4       ( cen4      ),
-    .cendec     ( cendec    ),
+    .cen_ctl    ( cen_ctl   ),
+    .cen_dec    ( cen_dec   ),
     .divby      ( divby     ),
     // chip interface
     .stn        ( stn       ),
@@ -83,8 +83,8 @@ jt7759_ctrl u_ctrl(
 jt7759_data u_data(
     .rst        ( rst       ),
     .clk        ( clk       ),
-    .cen4       ( cen4      ),
-    .cendec     ( cendec    ),
+    .cen_ctl    ( cen_ctl   ),
+    .cen_dec    ( cen_dec   ),
     .mdn        ( mdn       ),
     // Control interface
     .ctrl_cs    ( ctrl_cs   ),
@@ -106,7 +106,7 @@ jt7759_data u_data(
 jt7759_adpcm u_adpcm(
     .rst        ( dec_rst   ),
     .clk        ( clk       ),
-    .cendec     ( cendec    ),
+    .cen_dec    ( cen_dec   ),
     .encoded    ( encoded   ),
     .sound      ( sound     )
 );
@@ -118,7 +118,7 @@ initial begin
     fsnd=$fopen("jt7759.raw","wb");
 end
 wire signed [15:0] snd_log = { sound, 2'b0 };
-always @(posedge cendec) begin
+always @(posedge cen_dec) begin
     $fwrite(fsnd,"%u", {snd_log, snd_log});
 end
 `endif

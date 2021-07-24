@@ -1,16 +1,16 @@
 /*  This file is part of JT7759.
     JT7759 program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public Licen4se as published by
-    the Free Software Foundation, either version 3 of the Licen4se, or
+    it under the terms of the GNU General Public Licen_ctlse as published by
+    the Free Software Foundation, either version 3 of the Licen_ctlse, or
     (at your option) any later version.
 
     JT7759 program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public Licen4se for more details.
+    GNU General Public Licen_ctlse for more details.
 
-    You should have received a copy of the GNU General Public Licen4se
-    along with JT7759.  If not, see <http://www.gnu.org/licen4ses/>.
+    You should have received a copy of the GNU General Public Licen_ctlse
+    along with JT7759.  If not, see <http://www.gnu.org/licen_ctlses/>.
 
     Author: Jose Tejada Gomez. Twitter: @topapate
     Version: 1.0
@@ -19,8 +19,8 @@
 module jt7759_ctrl(
     input             rst,
     input             clk,
-    input             cen4,  // 640kHz
-    input             cendec,
+    input             cen_ctl,
+    input             cen_dec,
     output reg [ 5:0] divby,
     input             stn,  // STart (active low)
     input             cs,
@@ -107,7 +107,7 @@ always @(posedge clk, posedge rst) begin
         st        <= RST;
         pre_cs    <= 0;
         rom_addr  <= 17'd0;
-        divby     <= 6'd1;
+        divby     <= 6'h10; // ~8kHz
         last_wr   <= 0;
         dec_rst   <= 1;
         dec_din   <= 4'd0;
@@ -123,10 +123,10 @@ always @(posedge clk, posedge rst) begin
     end else begin
         last_wr <= write;
         if( pulse_cs ) begin
-            if( cen4 ) pulse_cs <= 0;
+            if( cen_ctl ) pulse_cs <= 0;
         end else begin
             case( st )
-                default: if(cen4) begin // start up process
+                default: if(cen_ctl) begin // start up process
                     if( mdn ) begin
                         rom_addr <= 17'd0;
                         pre_cs   <= 0;
@@ -140,7 +140,7 @@ always @(posedge clk, posedge rst) begin
                     else st <= IDLE;
                 end
                 // Check the chip signature
-                SIGN: if (cen4) begin
+                SIGN: if (cen_ctl) begin
                     waitc <= 0;
                     if( !mdn ) begin
                         st <= READADR;
@@ -189,7 +189,7 @@ always @(posedge clk, posedge rst) begin
                         st      <= SIGN;
                     end
                 end
-                READADR: if(cen4) begin
+                READADR: if(cen_ctl) begin
                     waitc <= 0;
                     if( data_good ) begin
                         if( rom_addr[0] ) begin
@@ -204,7 +204,7 @@ always @(posedge clk, posedge rst) begin
                         end
                     end
                 end
-                LOAD: if(cen4) begin
+                LOAD: if(cen_ctl) begin
                     rom_addr <= { addr_latch, 1'b1 };
                     headerok <= 0;
                     st       <= READCMD;
@@ -213,7 +213,7 @@ always @(posedge clk, posedge rst) begin
                     waitc    <= 1;
                     rep_cnt  <= ~4'd0;
                 end
-                READCMD: if(cen4) begin
+                READCMD: if(cen_ctl) begin
                     waitc <= 0;
                     if( data_good ) begin
                         rom_addr <= next_rom;
@@ -268,7 +268,7 @@ always @(posedge clk, posedge rst) begin
                         st       <= PLAY;
                     end
                 end
-                MUTED: if( cen4 ) begin
+                MUTED: if( cen_ctl ) begin
                     dec_rst<= 1;
                     if( mute_cnt != 0 ) begin
                         mute_cnt <= mute_cnt-1'd1;
@@ -287,7 +287,7 @@ always @(posedge clk, posedge rst) begin
                         pre_cs   <= 1;
                         pulse_cs <= 1;
                         waitc    <= 1;
-                    end else if(cendec) begin
+                    end else if(cen_dec) begin
                         if( pre_cs ) begin
                             if( data_good ) begin
                                 { dec_din, next } <= rom_data;

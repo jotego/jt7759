@@ -19,7 +19,7 @@
 module jt7759_adpcm #(parameter SW=9) (
     input                      rst,
     input                      clk,
-    input                      cendec,
+    input                      cen_dec,
     input             [   3:0] encoded,
     output reg signed [SW-1:0] sound
 );
@@ -56,7 +56,7 @@ always @(posedge clk, posedge rst ) begin
     if( rst ) begin
         sound <= {SW{1'd0}};
         st    <= 4'd0;
-    end else if(cendec) begin
+    end else if(cen_dec) begin
         sound <= sound + sign_ext( lut[{st,encoded}] );
         st    <= st_next[3:0];
     end

@@ -1,16 +1,16 @@
 /*  This file is part of JT7759.
     JT7759 program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public Licen4se as published by
-    the Free Software Foundation, either version 3 of the Licen4se, or
+    it under the terms of the GNU General Public Licen_ctlse as published by
+    the Free Software Foundation, either version 3 of the Licen_ctlse, or
     (at your option) any later version.
 
     JT7759 program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public Licen4se for more details.
+    GNU General Public Licen_ctlse for more details.
 
-    You should have received a copy of the GNU General Public Licen4se
-    along with JT7759.  If not, see <http://www.gnu.org/licen4ses/>.
+    You should have received a copy of the GNU General Public Licen_ctlse
+    along with JT7759.  If not, see <http://www.gnu.org/licen_ctlses/>.
 
     Author: Jose Tejada Gomez. Twitter: @topapate
     Version: 1.0
@@ -19,8 +19,8 @@
 module jt7759_data(
     input             rst,
     input             clk,
-    input             cen4,
-    input             cendec,
+    input             cen_ctl,
+    input             cen_dec,
     input             mdn,
     // Control interface
     input             ctrl_cs,      // equivalent to DRQn in original chip
@@ -80,7 +80,7 @@ always @(posedge clk, posedge rst) begin
         last_ctrl_cs <= ctrl_cs;
         if( !ctrl_cs )
             cnt <= 2;
-        else if( cen4 && cnt!=0 )
+        else if( cen_ctl && cnt!=0 )
             cnt<=cnt-1'd1;
         if( ctrl_cs & ~last_ctrl_cs ) begin
             pre_drqn <= 0;

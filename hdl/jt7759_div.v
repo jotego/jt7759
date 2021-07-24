@@ -20,33 +20,39 @@ module jt7759_div(
     input            clk,
     input            cen,  // 640kHz
     input      [5:0] divby,
-    output reg       cen4,
-    output reg       cendec
+    output reg       cen_ctl,   // control = 4x faster than decoder
+    output reg       cen_dec
 );
 
 reg [1:0] cnt4;
-reg [5:0] cntdiv;
-wire      pre4;
+reg [5:0] decdiv, ctldiv, divby_l;
+wire      eoc_ctl, eoc_dec, eoc_cnt; //  end of count
 
-assign pre4 = cen && (&cnt4);
+assign eoc_ctl = ctldiv == divby_l;
+assign eoc_dec = decdiv == divby_l;
+assign eoc_cnt = &cnt4;
 
 `ifdef SIMULATION
 initial begin
     cnt4   = 2'd0;
-    cntdiv = 6'd0;
+    divby_l= 0;
+    decdiv = 6'd3; // bad start numbers to show the auto allignment feature
+    ctldiv = 6'd7;
 end
 `endif
 
 always @(posedge clk) if(cen) begin
     cnt4   <= cnt4+2'd1;
-    if( &cnt4 ) begin
-        cntdiv <= cntdiv==divby ? 6'd0 : (cntdiv+1'd1);
+    if( eoc_cnt ) begin
+        decdiv <= eoc_dec ? 6'd0 : (decdiv+1'd1);
+        if( eoc_dec ) divby_l <= divby; // The divider is updated only at EOC
     end
+    ctldiv <= eoc_ctl || (eoc_dec && eoc_cnt) ? 6'd0 : (ctldiv+1'd1);
 end
 
 always @(posedge clk) begin
-    cen4   <= pre4;
-    cendec <= pre4 && cntdiv==divby;
+    cen_ctl <= cen && eoc_ctl;
+    cen_dec <= cen && eoc_dec && eoc_cnt;
 end
 
 endmodule
