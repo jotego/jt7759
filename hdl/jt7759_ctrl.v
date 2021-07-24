@@ -89,7 +89,7 @@ end
 `ifdef SIMULATION
 `define JT7759_SILENCE $display("jt7759: read silence");
 `define JT7759_PLAY $display("jt7759: read play");
-`define JT7759_PLAY_LONG $display("jt7759: read play long");
+`define JT7759_PLAY_LONG $display("jt7759: read play n");
 `define JT7759_REPEAT $display("jt7759: read repeat");
 `define JT7759_DONE $display("jt7759: sample done");
 `else
@@ -123,7 +123,7 @@ always @(posedge clk, posedge rst) begin
     end else begin
         last_wr <= write;
         if( pulse_cs ) begin
-            if( cen_ctl ) pulse_cs <= 0;
+            pulse_cs <= 0;
         end else begin
             case( st )
                 default: if(cen_ctl) begin // start up process
