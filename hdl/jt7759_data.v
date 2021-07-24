@@ -53,13 +53,10 @@ assign rom_cs  = mdn && !drqn;
 
 always @(posedge clk, posedge rst) begin
     if( rst ) begin
-        fifo_ok  <= 0;
         rom_addr <= 0;
         drqn     <= 1;
     end else if(cen_ctl) begin
-        if( ctrl_busyn ) begin
-            fifo_ok <= 0;
-        end else begin
+        if( !ctrl_busyn ) begin
             if(fifo_ok!=4'hf) begin
                 drqn <= ~drqn;
                 if( drqn ) rom_addr <= rom_addr + 1;
@@ -76,8 +73,14 @@ always @(posedge clk, posedge rst) begin
         ctrl_cs_l <= 0;
         readout   <= 0;
         ctrl_ok   <= 0;
+        fifo_ok  <= 0;
+        wr_addr <= 0;
+        drqn_l  <= 1;
     end else begin
         ctrl_cs_l <= ctrl_cs;
+        drqn_l <= drqn;
+
+        // read out
         if( ctrl_cs && !ctrl_cs_l ) begin
             readout <= 1;
             ctrl_ok <= 0;
@@ -93,15 +96,8 @@ always @(posedge clk, posedge rst) begin
             readout <= 0;
             ctrl_ok <= 0;
         end
-    end
-end
 
-always @(posedge clk, posedge rst) begin
-    if( rst ) begin
-        wr_addr <= 0;
-        drqn_l  <= 1;
-    end else begin
-        drqn_l <= drqn;
+        // read in
         if( !drqn && drqn_l ) begin
             readin <= 1;
         end
@@ -111,6 +107,8 @@ always @(posedge clk, posedge rst) begin
             wr_addr <= wr_addr + 1;
             readin  <= 0;
         end
+
+        if( ctrl_busyn ) fifo_ok <= 0;
     end
 end
 
