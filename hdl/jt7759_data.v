@@ -44,7 +44,8 @@ reg  [7:0] fifo[4];
 reg  [3:0] fifo_ok;
 reg        drqn_l, ctrl_cs_l;
 reg  [1:0] rd_addr, wr_addr;
-reg        readin, readout;
+reg        readin, readout, readin_l, good_l;
+reg  [4:0] drqn_cnt;
 
 wire       good    = mdn ? rom_ok & ~drqn_l & ~drqn : (cs&~wrn);
 wire [7:0] din_mux = mdn ? rom_data : din;
@@ -53,15 +54,33 @@ assign rom_cs  = mdn && !drqn;
 
 always @(posedge clk, posedge rst) begin
     if( rst ) begin
+        drqn_cnt <= 0;
+    end else begin
+        // Minimum time between DRQn pulses
+        if( readin || good )
+            drqn_cnt <= ~0;
+        else if( drqn_cnt!=0 && cen_ctl) drqn_cnt <= drqn_cnt-1'd1;
+    end
+end
+
+always @(posedge clk, posedge rst) begin
+    if( rst ) begin
         rom_addr <= 0;
         drqn     <= 1;
+        readin_l <= 0;
+        good_l   <= 0;
     end else if(cen_ctl) begin
+        readin_l <= readin;
+        good_l   <= good;
+
         if( !ctrl_busyn ) begin
-            if(fifo_ok!=4'hf) begin
-                drqn <= ~drqn;
-                if( drqn ) rom_addr <= rom_addr + 1;
-            end else begin
+            if(fifo_ok==4'hf || (!readin && readin_l) ) begin
                 drqn <= 1;
+            end else if(fifo_ok!=4'hf && !readin && drqn_cnt==0 ) begin
+                drqn <= 0;
+                if( drqn ) begin
+                    rom_addr <= rom_addr + 1;
+                end
             end
         end
     end
@@ -71,6 +90,7 @@ always @(posedge clk, posedge rst) begin
     if( rst ) begin
         rd_addr   <= 0;
         ctrl_cs_l <= 0;
+        readin    <= 0;
         readout   <= 0;
         ctrl_ok   <= 0;
         fifo_ok  <= 0;

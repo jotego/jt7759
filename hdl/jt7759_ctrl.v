@@ -123,7 +123,7 @@ always @(posedge clk, posedge rst) begin
     end else begin
         last_wr <= write;
         if( pulse_cs ) begin
-            pulse_cs <= 0;
+            if(cen_ctl) pulse_cs <= 0;
         end else begin
             case( st )
                 default: if(cen_ctl) begin // start up process
@@ -263,7 +263,9 @@ always @(posedge clk, posedge rst) begin
                     waitc <= 0;
                     if( data_good ) begin
                         rom_addr <= next_rom;
-                        pre_cs   <= 0;
+                        pre_cs   <= 1;
+                        pulse_cs <= 1;
+                        waitc    <= 1;
                         data_cnt <= {1'b0, rom_data};
                         st       <= PLAY;
                     end

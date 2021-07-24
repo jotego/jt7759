@@ -20,7 +20,7 @@ module jt7759_div(
     input            clk,
     input            cen,  // 640kHz
     input      [5:0] divby,
-    output reg       cen_ctl,   // control = 4x faster than decoder
+    output reg       cen_ctl,   // control = 8x faster than decoder
     output reg       cen_dec
 );
 
@@ -28,7 +28,7 @@ reg [1:0] cnt4;
 reg [5:0] decdiv, ctldiv, divby_l;
 wire      eoc_ctl, eoc_dec, eoc_cnt; //  end of count
 
-assign eoc_ctl = ctldiv == divby_l;
+assign eoc_ctl = ctldiv == { 1'b0, divby_l[5:1] };
 assign eoc_dec = decdiv == divby_l;
 assign eoc_cnt = &cnt4;
 
@@ -51,7 +51,7 @@ always @(posedge clk) if(cen) begin
 end
 
 always @(posedge clk) begin
-    cen_ctl <= cen && eoc_ctl;
+    cen_ctl <= cen; // && eoc_ctl;
     cen_dec <= cen && eoc_dec && eoc_cnt;
 end
 
