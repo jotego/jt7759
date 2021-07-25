@@ -80,6 +80,7 @@ jt7759_ctrl u_ctrl(
     .stn        ( stn       ),
     .cs         ( cs        ),
     .mdn        ( mdn       ),
+    .drqn       ( drqn      ),
     .busyn      ( busyn     ),
     .wrn        ( wrn       ),
     .din        ( din       ),
@@ -131,7 +132,7 @@ integer fsnd;
 initial begin
     fsnd=$fopen("jt7759.raw","wb");
 end
-wire signed [15:0] snd_log = { sound, 2'b0 };
+wire signed [15:0] snd_log = { sound, 7'b0 };
 always @(posedge cen_dec) begin
     $fwrite(fsnd,"%u", {snd_log, snd_log});
 end

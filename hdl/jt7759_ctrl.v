@@ -25,6 +25,7 @@ module jt7759_ctrl(
     input             stn,  // STart (active low)
     input             cs,
     input             mdn,  // MODE: 1 for stand alone mode, 0 for slave mode
+    input             drqn,
     output            busyn,
     // CPU interface
     input             wrn,  // for slave mode only
@@ -160,7 +161,7 @@ always @(posedge clk, posedge rst) begin
                     end
                 end
                 IDLE: begin
-                    if( wr_posedge ) begin
+                    if( wr_posedge && drqn ) begin
                         //if( din <= max_snd || !mdn ) begin
                             pre_cs   <= 1;
                             pulse_cs <= 1;
