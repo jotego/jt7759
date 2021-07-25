@@ -75,13 +75,12 @@ always @(posedge clk, posedge rst) begin
         good_l   <= good;
 
         if( !ctrl_busyn ) begin
+            if(!readin && readin_l)
+                rom_addr <= rom_addr + 1;
             if(fifo_ok==4'hf || (!readin && readin_l) ) begin
                 drqn <= 1;
             end else if(fifo_ok!=4'hf && !readin && drqn_cnt==0 ) begin
                 drqn <= 0;
-                if( drqn ) begin
-                    rom_addr <= rom_addr + 1;
-                end
             end
         end
 
