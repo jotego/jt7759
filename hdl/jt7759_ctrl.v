@@ -249,7 +249,7 @@ always @(posedge clk, posedge rst) begin
                         rom_addr <= next_rom;
                         pre_cs   <= 1;
                         pulse_cs <= 1;
-                        data_cnt <= {1'b0, rom_data}-1'd1;
+                        data_cnt <= {1'b0, rom_data};
                         st       <= PLAY;
                     end
                 end

@@ -76,6 +76,7 @@ void fill( char *buf, char *enc, int len ) {
                 if( len-k > (aux/2)+2) {
                     buf[k++] = cmd;
                     buf[k++] = aux;
+                    ++aux;
                     while( aux>0 ) {
                         char b = buf[k++] = rand();
                         enc[e++] = (b>>4)&0xf;
