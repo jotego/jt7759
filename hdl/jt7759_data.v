@@ -23,6 +23,7 @@ module jt7759_data(
     input             cen_dec,
     input             mdn,
     // Control interface
+    input             ctrl_flush,
     input             ctrl_cs,
     input             ctrl_busyn,
     input      [16:0] ctrl_addr,
@@ -128,7 +129,7 @@ always @(posedge clk, posedge rst) begin
             readin  <= 0;
         end
 
-        if( ctrl_busyn ) fifo_ok <= 0;
+        if( ctrl_busyn || ctrl_flush ) fifo_ok <= 0;
     end
 end
 

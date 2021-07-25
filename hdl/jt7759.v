@@ -51,7 +51,7 @@ wire          cen_ctl;    // cen_dec x4
 wire          dec_rst;
 wire   [ 3:0] encoded;
 
-wire          ctrl_cs, ctrl_ok;
+wire          ctrl_cs, ctrl_ok, ctrl_flush;
 wire   [16:0] ctrl_addr;
 wire   [ 7:0] ctrl_din;
 
@@ -91,7 +91,8 @@ jt7759_ctrl u_ctrl(
     .rom_cs     ( ctrl_cs   ),
     .rom_addr   ( ctrl_addr ),
     .rom_data   ( ctrl_din  ),
-    .rom_ok     ( ctrl_ok   )
+    .rom_ok     ( ctrl_ok   ),
+    .flush      ( ctrl_flush)
 );
 
 jt7759_data u_data(
@@ -101,6 +102,7 @@ jt7759_data u_data(
     .cen_dec    ( cen_dec   ),
     .mdn        ( mdn       ),
     // Control interface
+    .ctrl_flush ( ctrl_flush),
     .ctrl_cs    ( ctrl_cs   ),
     .ctrl_addr  ( ctrl_addr ),
     .ctrl_din   ( ctrl_din  ),

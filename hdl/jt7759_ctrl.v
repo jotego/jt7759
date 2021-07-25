@@ -37,7 +37,8 @@ module jt7759_ctrl(
     output            rom_cs,      // equivalent to DRQn in original chip
     output reg [16:0] rom_addr,
     input      [ 7:0] rom_data,
-    input             rom_ok
+    input             rom_ok,
+    output reg        flush
 );
 
 localparam STW = 11;
@@ -118,8 +119,10 @@ always @(posedge clk, posedge rst) begin
         headerok  <= 0;
         addr_latch<= 0;
         pulse_cs  <= 0;
+        flush     <= 0;
     end else begin
         last_wr <= write;
+        flush   <= 0;
         if( pulse_cs ) begin
             /*if(cen_ctl)*/ pulse_cs <= 0;
         end else begin
@@ -166,6 +169,7 @@ always @(posedge clk, posedge rst) begin
                             pre_cs   <= 1;
                             pulse_cs <= 1;
                             rom_addr <= { 7'd0, {1'd0, din} + 9'd2, 1'b1 };
+                            flush    <= 1;
                             st       <= READADR;
                         //end
                     end else begin
@@ -200,6 +204,7 @@ always @(posedge clk, posedge rst) begin
                     pre_cs   <= 1;
                     pulse_cs <= 1;
                     rep_cnt  <= ~4'd0;
+                    if ( mdn ) flush <= 1;
                 end
                 READCMD: if(cen_ctl) begin
                     if( rom_ok ) begin
