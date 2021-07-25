@@ -164,12 +164,12 @@ always @(posedge clk, posedge rst) begin
                     end
                 end
                 IDLE: begin
+                    flush <= 1;
                     if( wr_posedge && drqn ) begin
                         //if( din <= max_snd || !mdn ) begin
                             pre_cs   <= 1;
                             pulse_cs <= 1;
                             rom_addr <= { 7'd0, {1'd0, din} + 9'd2, 1'b1 };
-                            flush    <= 1;
                             st       <= READADR;
                         //end
                     end else begin
@@ -188,6 +188,7 @@ always @(posedge clk, posedge rst) begin
                     if( rom_ok ) begin
                         if( rom_addr[0] ) begin
                             rom_addr <= next_rom;
+                            pulse_cs <= 1;
                             addr_latch[ 7:0] <= rom_data;
                         end else begin
                             addr_latch[15:8] <= addr_latch[7:0];

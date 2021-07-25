@@ -84,6 +84,9 @@ always @(posedge clk, posedge rst) begin
                 end
             end
         end
+
+        if( ctrl_flush )
+            rom_addr <= ctrl_addr;
     end
 end
 
