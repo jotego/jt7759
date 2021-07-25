@@ -271,7 +271,7 @@ always @(posedge clk, posedge rst) begin
                     end
                 end
                 MUTED: if( cen_ctl ) begin
-                    dec_rst<= 1;
+                    if(cen_dec) dec_rst<= 1;
                     if( mute_cnt != 0 ) begin
                         mute_cnt <= mute_cnt-1'd1;
                     end else begin

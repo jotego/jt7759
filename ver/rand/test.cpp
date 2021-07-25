@@ -106,7 +106,7 @@ int main() {
 
     const int LEN=2*1024;
     char buffer[LEN], enc[2*LEN];
-    for( int loops=0; loops < 10; loops ++ ) {
+    for( int loops=0; loops < 40; loops ++ ) {
         dut.mdn = 0;
         clock( 4 );
         write( 0xff );
@@ -128,19 +128,22 @@ int main() {
             drqn_l = dut.drqn;
             if( dut.debug_cen_dec && !cen_dec_l && dut.debug_dec_rst==0 ) {
                 char good = enc[check++];
-                printf("%X - %X\n", good, dut.debug_nibble );
+                //printf("%X - %X\n", good, dut.debug_nibble );
                 if( good != dut.debug_nibble ) {
                     printf("ERROR: unexpected encoded value\n");
                     //for( int l=(check>>1)-2; l<(check>>1)+4 && l<LEN ; l++ ) {
                     //    printf("%02X ", enc[l]&0xff);
                     //}
-                    for( int l=0; l<(check>>1)+4; l++ ) {
-                        printf("%02X ", enc[l]&0xff);
-                        if( (l&0xf) == 0xf ) printf("\n");
+                    for( int l=0; l<check+4; l++ ) {
+                        printf("%X", enc[l]&0xff);
+                        if( l&1 ) printf(" ");
+                        if( (l&0xf) == 0xf ) printf("  ");
+                        if( (l&0x1f) == 0x1f ) printf("\n");
                     }
                     printf("\nBuffer ---- \n");
                     for( int l=0; l<k+4 && l<LEN; l++ ) {
                         printf("%02X ", buffer[l]&0xff);
+                        if( (l&0xf) == 0x7 ) printf("  ");
                         if( (l&0xf) == 0xf ) printf("\n");
                     }
                     printf("\n\n");
