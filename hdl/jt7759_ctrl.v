@@ -63,19 +63,17 @@ reg  [    3:0] rep_cnt;
 reg  [   15:0] addr_latch;
 reg  [   16:0] rep_latch;
 reg  [    7:0] sign[0:3];
-reg            last_wr, waitc, getdiv, headerok;
+reg            last_wr, getdiv, headerok;
 reg            signok; // ROM signature ok
 wire           write, wr_posedge;
 wire [   16:0] next_rom;
 wire [    1:0] sign_addr = rom_addr[1:0]-2'd1;
-wire           data_good;
 reg            pre_cs, pulse_cs;
 
 assign      write      = cs && (!mdn || !stn );
 assign      wr_posedge = !last_wr && write;
 assign      busyn      = st == IDLE || st == RST;
 assign      next_rom   = rom_addr+1'b1;
-assign      data_good  = mdn ? (rom_ok & !waitc) : rom_ok;
 assign      rom_cs     = pre_cs & ~pulse_cs;
 
 initial begin
@@ -113,7 +111,6 @@ always @(posedge clk, posedge rst) begin
         dec_din   <= 4'd0;
         mute_cnt  <= 0;
         data_cnt  <= 9'd0;
-        waitc     <= 1;
         signok    <= 0;
         rep_cnt   <= ~4'd0;
         rep_latch <= 17'd0;
@@ -123,17 +120,15 @@ always @(posedge clk, posedge rst) begin
     end else begin
         last_wr <= write;
         if( pulse_cs ) begin
-            if(cen_ctl) pulse_cs <= 0;
+            /*if(cen_ctl)*/ pulse_cs <= 0;
         end else begin
             case( st )
                 default: if(cen_ctl) begin // start up process
                     if( mdn ) begin
                         rom_addr <= 17'd0;
                         pre_cs   <= 0;
-                        waitc    <= 0;
                         dec_rst  <= 1;
                         //pre_cs   <= 1;
-                        //waitc    <= 1;
                         //st       <= SND_CNT; // Reads the ROM header
                         st       <= IDLE;
                     end
@@ -141,7 +136,6 @@ always @(posedge clk, posedge rst) begin
                 end
                 // Check the chip signature
                 SIGN: if (cen_ctl) begin
-                    waitc <= 0;
                     if( !mdn ) begin
                         st <= READADR;
                         rom_addr[0] <= ~rom_addr[0];
@@ -161,7 +155,6 @@ always @(posedge clk, posedge rst) begin
                                     st<=IDLE;
                                 end
                                 rom_addr<= next_rom;
-                                waitc   <= 1;
                             end
                         end
                     end
@@ -171,7 +164,6 @@ always @(posedge clk, posedge rst) begin
                         //if( din <= max_snd || !mdn ) begin
                             pre_cs   <= 1;
                             pulse_cs <= 1;
-                            waitc    <= 1;
                             rom_addr <= { 7'd0, {1'd0, din} + 9'd2, 1'b1 };
                             st       <= READADR;
                         //end
@@ -181,20 +173,16 @@ always @(posedge clk, posedge rst) begin
                     end
                 end
                 SND_CNT: begin
-                    waitc <= 0;
-                    if( data_good ) begin
+                    if( rom_ok ) begin
                         max_snd <= rom_data;
                         rom_addr<= next_rom;
-                        waitc   <= 1;
                         st      <= SIGN;
                     end
                 end
                 READADR: if(cen_ctl) begin
-                    waitc <= 0;
-                    if( data_good ) begin
+                    if( rom_ok ) begin
                         if( rom_addr[0] ) begin
                             rom_addr <= next_rom;
-                            waitc    <= 1;
                             addr_latch[ 7:0] <= rom_data;
                         end else begin
                             addr_latch[15:8] <= addr_latch[7:0];
@@ -210,14 +198,11 @@ always @(posedge clk, posedge rst) begin
                     st       <= READCMD;
                     pre_cs   <= 1;
                     pulse_cs <= 1;
-                    waitc    <= 1;
                     rep_cnt  <= ~4'd0;
                 end
                 READCMD: if(cen_ctl) begin
-                    waitc <= 0;
-                    if( data_good ) begin
+                    if( rom_ok ) begin
                         rom_addr <= next_rom;
-                        waitc    <= 1;
                         pre_cs   <= 1;
                         pulse_cs <= 1;
                         if( ~&rep_cnt ) begin
@@ -260,12 +245,10 @@ always @(posedge clk, posedge rst) begin
                     end
                 end
                 GETN: begin
-                    waitc <= 0;
-                    if( data_good ) begin
+                    if( rom_ok ) begin
                         rom_addr <= next_rom;
                         pre_cs   <= 1;
                         pulse_cs <= 1;
-                        waitc    <= 1;
                         data_cnt <= {1'b0, rom_data}-1'd1;
                         st       <= PLAY;
                     end
@@ -278,14 +261,12 @@ always @(posedge clk, posedge rst) begin
                         st     <= READCMD;
                         pre_cs <= 1;
                         pulse_cs <= 1;
-                        waitc  <= 1;
                     end
                 end
                 PLAY: begin
-                    waitc <= 0;
                     if(cen_dec) begin
                         if( pre_cs ) begin
-                            if( data_good ) begin
+                            if( rom_ok ) begin
                                 { dec_din, next } <= rom_data;
                                 dec_rst           <= 0;
                                 pre_cs            <= 0;
@@ -293,7 +274,6 @@ always @(posedge clk, posedge rst) begin
                                 if( data_cnt==0 ) begin
                                     pre_cs   <= 1;
                                     pulse_cs <= 1;
-                                    waitc    <= 1;
                                     st       <= READCMD;
                                 end
                             end
@@ -302,7 +282,6 @@ always @(posedge clk, posedge rst) begin
                             rom_addr <= next_rom;
                             pre_cs   <= 1;
                             pulse_cs <= 1;
-                            waitc    <= 1;
                             data_cnt <= data_cnt-1'd1;
                             if( data_cnt==0 ) begin
                                 st <= READCMD;

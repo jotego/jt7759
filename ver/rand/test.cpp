@@ -61,7 +61,7 @@ void fill( char *buf, char *enc, int len ) {
                 buf[k++] = cmd;
                 continue;
             case 1:
-                if( len-k>=258 ) {
+                if( len-k>=129 ) {
                     buf[k++] = cmd;
                     for(int j=0; j<128; j++ ) {
                         char b = buf[k++] = rand();
@@ -72,6 +72,7 @@ void fill( char *buf, char *enc, int len ) {
                 continue;
             case 2:
                 aux = rand()&0xff;
+                if( aux==0 ) continue;
                 if( len-k > (aux/2)+2) {
                     buf[k++] = cmd;
                     buf[k++] = aux;
@@ -106,7 +107,9 @@ int main() {
 
     const int LEN=2*1024;
     char buffer[LEN], enc[2*LEN];
-    for( int loops=0; loops < 40; loops ++ ) {
+    for( int loops=0; loops < 4000; loops ++ ) {
+        //trace = loops > 193;
+        trace=false;
         dut.mdn = 0;
         clock( 4 );
         write( 0xff );
@@ -130,23 +133,25 @@ int main() {
                 char good = enc[check++];
                 //printf("%X - %X\n", good, dut.debug_nibble );
                 if( good != dut.debug_nibble ) {
+                    printf("%X - %X*\n", good, dut.debug_nibble );
                     printf("ERROR: unexpected encoded value\n");
                     //for( int l=(check>>1)-2; l<(check>>1)+4 && l<LEN ; l++ ) {
                     //    printf("%02X ", enc[l]&0xff);
                     //}
-                    for( int l=0; l<check+4; l++ ) {
+                    for( int l=0; l<check+2; l++ ) {
                         printf("%X", enc[l]&0xff);
                         if( l&1 ) printf(" ");
                         if( (l&0xf) == 0xf ) printf("  ");
                         if( (l&0x1f) == 0x1f ) printf("\n");
                     }
                     printf("\nBuffer ---- \n");
-                    for( int l=0; l<k+4 && l<LEN; l++ ) {
+                    for( int l=0; l<k+2 && l<LEN; l++ ) {
                         printf("%02X ", buffer[l]&0xff);
                         if( (l&0xf) == 0x7 ) printf("  ");
                         if( (l&0xf) == 0xf ) printf("\n");
                     }
                     printf("\n\n");
+                    printf("%d loops, buffer cnt=%d\n", loops, k );
                     goto done;
                 }
                 if( check>=LEN ) {

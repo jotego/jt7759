@@ -45,7 +45,7 @@ always @(posedge clk) if(cen) begin
     cnt4   <= cnt4+2'd1;
     if( eoc_cnt ) begin
         decdiv <= eoc_dec ? 6'd0 : (decdiv+1'd1);
-        if( eoc_dec ) divby_l <= divby; // The divider is updated only at EOC
+        if( eoc_dec ) divby_l <= divby < 9 ? 9 : divby; // The divider is updated only at EOC
     end
     ctldiv <= eoc_ctl || (eoc_dec && eoc_cnt) ? 6'd0 : (ctldiv+1'd1);
 end
