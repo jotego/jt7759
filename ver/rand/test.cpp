@@ -64,18 +64,23 @@ void fill( char *buf, char *enc, int len ) {
                 if( len-k>=258 ) {
                     buf[k++] = cmd;
                     for(int j=0; j<128; j++ ) {
-                        enc[e++] = buf[k++] = rand();
+                        char b = buf[k++] = rand();
+                        enc[e++] = (b>>4)&0xf;
+                        enc[e++] = b&0xf;
                     }
                 }
                 continue;
             case 2:
                 aux = rand()&0xff;
-                if( len-k > aux+2) {
+                if( len-k > (aux/2)+2) {
                     buf[k++] = cmd;
                     buf[k++] = aux;
-                    aux>>=1;
-                    while( aux-- ) {
-                        enc[e++] = buf[k++] = rand();
+                    while( aux>0 ) {
+                        char b = buf[k++] = rand();
+                        enc[e++] = (b>>4)&0xf;
+                        if( --aux <=0 ) break;
+                        enc[e++] = b&0xf;
+                        --aux;
                     }
                 }
                 continue;
@@ -83,7 +88,7 @@ void fill( char *buf, char *enc, int len ) {
                 continue;
         }
     }
-    while( e < len ) enc[e++]=0;
+    while( e < len*2 ) enc[e++]=0;
 }
 
 int main() {
@@ -100,7 +105,7 @@ int main() {
     reset();
 
     const int LEN=2*1024;
-    char buffer[LEN], enc[LEN];
+    char buffer[LEN], enc[2*LEN];
     for( int loops=0; loops < 10; loops ++ ) {
         dut.mdn = 0;
         clock( 4 );
@@ -122,12 +127,7 @@ int main() {
             }
             drqn_l = dut.drqn;
             if( dut.debug_cen_dec && !cen_dec_l && dut.debug_dec_rst==0 ) {
-                char good = enc[check>>1];
-                if( (check&1) == 0 ) {
-                    good >>= 4;
-                }
-                check++;
-                good &= 0xf;
+                char good = enc[check++];
                 printf("%X - %X\n", good, dut.debug_nibble );
                 if( good != dut.debug_nibble ) {
                     printf("ERROR: unexpected encoded value\n");
@@ -152,7 +152,9 @@ int main() {
             }
         }
         dut.mdn = 1;
+        dut.rst = 1;
         clock(4);
+        dut.rst = 0;
     }
 done:
     return 0;

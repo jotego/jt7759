@@ -240,7 +240,7 @@ always @(posedge clk, posedge rst) begin
                                 pre_cs  <= 0;
                             end
                             2'd1: begin // 256 nibbles
-                                data_cnt  <= 9'hFF;
+                                data_cnt  <= 9'hff;
                                 divby     <= rom_data[5:0];
                                 st        <= PLAY;
                                 `JT7759_PLAY
@@ -266,7 +266,7 @@ always @(posedge clk, posedge rst) begin
                         pre_cs   <= 1;
                         pulse_cs <= 1;
                         waitc    <= 1;
-                        data_cnt <= {1'b0, rom_data};
+                        data_cnt <= {1'b0, rom_data}-1'd1;
                         st       <= PLAY;
                     end
                 end
