@@ -105,9 +105,9 @@ int main() {
 
     reset();
 
-    const int LEN=2*1024;
+    const int LEN=4*1024;
     char buffer[LEN], enc[2*LEN];
-    for( int loops=0; loops < 4000; loops ++ ) {
+    for( int loops=0; loops < 1000; loops ++ ) {
         //trace = loops > 193;
         trace=false;
         dut.mdn = 0;
