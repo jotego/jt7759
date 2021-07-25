@@ -132,7 +132,11 @@ always @(posedge clk, posedge rst) begin
             readin  <= 0;
         end
 
-        if( ctrl_busyn || ctrl_flush ) fifo_ok <= 0;
+        if( ctrl_busyn || ctrl_flush ) begin
+            fifo_ok <= 0;
+            rd_addr <= 0;
+            wr_addr <= 0;
+        end
     end
 end
 
