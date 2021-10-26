@@ -82,6 +82,8 @@ always @(posedge clk, posedge rst) begin
             end else if(fifo_ok!=4'hf && !readin && drqn_cnt==0 ) begin
                 drqn <= 0;
             end
+        end else begin
+            drqn <= 1;
         end
 
         if( ctrl_flush )
