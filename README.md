@@ -54,11 +54,13 @@ Byte  | Usage
  3    | Must be 0x69
  4    | Must be 0x55
 
+If used in slave mode, tie rom_ok low.
+
 After each reset the number of samples and the signature are read. If the signature is not correct, no samples will be played. If the verilog macro **SIMULATION** is defined, the simulation will stop if the signature is wrong.
 
 If the simulator used supports X values, you need to define the macro **SIMULATION** to avoid X's in the divider module.
 
-If used in slave mode, tie rom_ok low.
+If the macro **JT7759_FIFO_DUMP** is defined, each byte read will be displayed during simulation.
 
 ### Implemented Features
 
@@ -96,6 +98,7 @@ Although this module is designed for usage in systems fully implemented inside a
 ## FPGA arcade cores using this module:
 
 * [Combat School](https://github.com/jotego/jtcontra), by the same author
+* [System16](https://github.com/jotego/jts16), by the same author
 
 ## Related Projects
 

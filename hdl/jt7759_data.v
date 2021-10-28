@@ -98,9 +98,9 @@ always @(posedge clk, posedge rst) begin
         readin    <= 0;
         readout   <= 0;
         ctrl_ok   <= 0;
-        fifo_ok  <= 0;
-        wr_addr <= 0;
-        drqn_l  <= 1;
+        fifo_ok   <= 0;
+        wr_addr   <= 0;
+        drqn_l    <= 1;
     end else begin
         ctrl_cs_l <= ctrl_cs;
         drqn_l <= drqn;
@@ -131,6 +131,9 @@ always @(posedge clk, posedge rst) begin
             fifo_ok[ wr_addr ] <= 1;
             wr_addr <= wr_addr + 1;
             readin  <= 0;
+            `ifdef JT7759_FIFO_DUMP
+            $display("\tjt7759: read %X",din_mux);
+            `endif
         end
 
         if( ctrl_busyn || ctrl_flush ) begin
