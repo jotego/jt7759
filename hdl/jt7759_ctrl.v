@@ -71,6 +71,7 @@ wire           write, wr_posedge;
 wire [   16:0] next_rom;
 wire [    1:0] sign_addr = rom_addr[1:0]-2'd1;
 reg            pre_cs, pulse_cs;
+reg            start;
 
 assign      write      = cs && (!mdn || !stn );
 assign      wr_posedge = !last_wr && write;
@@ -136,7 +137,10 @@ always @(posedge clk, posedge rst) begin
                         //st       <= SND_CNT; // Reads the ROM header
                         st       <= IDLE;
                     end
-                    else st <= IDLE;
+                    else begin
+                        st <= IDLE;
+                        headerok <= 1;
+                    end
                 end
                 // Check the chip signature
                 SIGN: if (cen_ctl) begin
@@ -165,16 +169,21 @@ always @(posedge clk, posedge rst) begin
                 end
                 IDLE: begin
                     flush <= 1;
-                    if( wr_posedge && drqn ) begin
-                        //if( din <= max_snd || !mdn ) begin
+                    if( wr_posedge && drqn )
+                        start <= 1;
+                    if( cen_ctl ) begin
+                        if( start ) begin
+                            start    <= 0;
                             pre_cs   <= 1;
                             pulse_cs <= 1;
-                            rom_addr <= { 7'd0, {1'd0, din} + 9'd2, 1'b1 };
+                            rom_addr <= mdn ?
+                                { 7'd0, {1'd0, din} + 9'd2, 1'b1 } :
+                                8'h10;
                             st       <= READADR;
-                        //end
-                    end else begin
-                        pre_cs  <= 0;
-                        dec_rst <= 1;
+                        end else begin
+                            pre_cs  <= 0;
+                            dec_rst <= 1;
+                        end
                     end
                 end
                 SND_CNT: begin
