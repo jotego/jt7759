@@ -35,10 +35,11 @@ reg  signed [3:0] st_lut[0:7];
 reg         [3:0] st;
 reg         [3:0] st_delta;
 reg  signed [5:0] st_next, st_sum;
+reg  signed [SW:0] next_snd, lut_step;
 
-function [SW-1:0] sign_ext;
+function [SW:0] sign_ext;
     input signed [8:0] din;
-    sign_ext = { {SW-9{din[8]}}, din };
+    sign_ext = { {SW-8{din[8]}}, din };
 endfunction
 
 always @(*) begin
@@ -50,6 +51,8 @@ always @(*) begin
         st_next = 6'd15;
     else
         st_next = st_sum;
+    lut_step = sign_ext( lut[{st,encoded}] );
+    next_snd = { sound[SW-1], sound } + lut_step;
 end
 
 always @(posedge clk, posedge rst ) begin
@@ -57,7 +60,9 @@ always @(posedge clk, posedge rst ) begin
         sound <= {SW{1'd0}};
         st    <= 4'd0;
     end else if(cen_dec) begin
-        sound <= sound + sign_ext( lut[{st,encoded}] );
+        if( next_snd[SW]==next_snd[SW-1] )
+            sound <= next_snd[SW-1:0];
+        else sound <= next_snd[SW] ? {1'b1,{SW-1{1'b0}}} : {1'b0,{SW-1{1'b1}}};
         st    <= st_next[3:0];
     end
 end
