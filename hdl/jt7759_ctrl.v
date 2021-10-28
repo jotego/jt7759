@@ -178,7 +178,7 @@ always @(posedge clk, posedge rst) begin
                             pulse_cs <= 1;
                             rom_addr <= mdn ?
                                 { 7'd0, {1'd0, din} + 9'd2, 1'b1 } :
-                                8'h10;
+                                17'hf;
                             st       <= READADR;
                         end else begin
                             pre_cs  <= 0;
@@ -210,11 +210,19 @@ always @(posedge clk, posedge rst) begin
                 LOAD: if(cen_ctl) begin
                     rom_addr <= { addr_latch, 1'b1 };
                     headerok <= 0;
-                    st       <= READCMD;
-                    pre_cs   <= 1;
-                    pulse_cs <= 1;
                     rep_cnt  <= ~4'd0;
-                    if ( mdn ) flush <= 1;
+                    if( !mdn ) begin
+                        if( rom_ok ) begin
+                            st <= READCMD;
+                            pulse_cs <= 1;
+                        end else if( !rom_cs ) begin
+                            pre_cs   <= 1;
+                            pulse_cs <= 1;
+                        end
+                    end else begin
+                        flush <= 1;
+                        st <= READCMD;
+                    end
                 end
                 READCMD: if(cen_ctl) begin
                     if( rom_ok ) begin

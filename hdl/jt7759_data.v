@@ -43,6 +43,7 @@ module jt7759_data(
 
 reg cen_ctl2, wrl;
 wire write = cs & ~wrn;
+reg  [4:0] drqn_cnt;
 
 always @(posedge clk) begin
     cen_ctl2 <= cen_ctl;
@@ -54,10 +55,13 @@ always @(posedge clk, posedge rst) begin
         drqn     <= 1;
         ctrl_ok  <= 0;
         ctrl_din <= 0;
+        drqn_cnt <= 0;
     end else begin
-        if( cen_ctl2 ) ctrl_ok <= 0;
-        if( cen_ctl2 && ctrl_cs ) begin
-            drqn    <= 0;
+        if( cen_ctl2 && drqn_cnt!=0 && drqn ) drqn_cnt <= drqn_cnt-1'd1;
+        if( !ctrl_cs ) ctrl_ok <= 0;
+        if( cen_ctl2 && ctrl_cs && drqn_cnt==0 ) begin
+            drqn <= 0;
+            drqn_cnt <= 5'h1f;
         end
         if( write && !wrl ) begin
             drqn     <= 1;
