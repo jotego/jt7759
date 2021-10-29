@@ -21,9 +21,6 @@ Device | ROM type | ROM size
  7756  |   PROM   |  256 kbit
  7759  | external | 1024 kbit
 
-### Control State Machine
-
-
 
 ## Port Description
 
@@ -61,6 +58,20 @@ After each reset the number of samples and the signature are read. If the signat
 If the simulator used supports X values, you need to define the macro **SIMULATION** to avoid X's in the divider module.
 
 If the macro **JT7759_FIFO_DUMP** is defined, each byte read will be displayed during simulation.
+
+## Verification
+
+Apart from the simulations files in the **ver** folder, the following games have been tested:
+
+Game              | Mode     | Remarks
+------------------|----------|----------
+Cotton            | Passive  | Noise at the beginning of the *coin* voice?
+Golden Axe        | Passive  | Good
+Shinobi set 2     | Passive  | Sound No 30 seems to repeat
+Tough Turf        | Passive  | Bad, sounds play non stop
+Wrestle War       | Passive  | Good
+
+It is important to let the samples sound until complete silence comes as a typical bug occurs when the end of the sample is not well detected and other samples are played in succession.
 
 ### Implemented Features
 
