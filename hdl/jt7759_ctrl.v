@@ -75,7 +75,7 @@ reg            pre_cs, pulse_cs;
 
 assign      write      = cs && ( (!mdn && !wrn) || !stn );
 assign      wr_posedge = !last_wr && write;
-assign      busyn      = st == IDLE || st == RST;
+assign      busyn      = st == IDLE || st == RST || st == DONE;
 assign      next_rom   = rom_addr+1'b1;
 assign      rom_cs     = pre_cs & ~pulse_cs;
 
@@ -139,7 +139,10 @@ always @(posedge clk, posedge rst) begin
                     end
                     else st <= IDLE;
                 end
-                DONE: st <= DONE; // stay here forever
+                DONE: begin
+                    st <= DONE; // stay here forever
+                    flush <= 1;
+                end
                 // Check the chip signature
                 SIGN: if (cen_ctl) begin
                     if( rom_ok ) begin
