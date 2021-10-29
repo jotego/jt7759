@@ -136,7 +136,7 @@ always @(posedge clk, posedge rst) begin
             `endif
         end
 
-        if(/* ctrl_busyn ||*/ ctrl_flush ) begin
+        if( ctrl_busyn || ctrl_flush ) begin
             fifo_ok <= 0;
             rd_addr <= 0;
             wr_addr <= 0;

@@ -65,10 +65,10 @@ Apart from the simulations files in the **ver** folder, the following games have
 
 Game              | Mode     | Remarks
 ------------------|----------|----------
-Cotton            | Passive  | Noise at the beginning of the *coin* voice?
+Cotton            | Passive  | Good
 Golden Axe        | Passive  | Good
-Shinobi set 2     | Passive  | Sound No 30 seems to repeat
-Tough Turf        | Passive  | Bad, sounds play non stop
+Shinobi set 2     | Passive  | Sound No 30 loops 1 time and ends in noise
+Tough Turf        | Passive  | Good
 Wrestle War       | Passive  | Good
 
 It is important to let the samples sound until complete silence comes as a typical bug occurs when the end of the sample is not well detected and other samples are played in succession.

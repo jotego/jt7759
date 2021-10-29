@@ -170,7 +170,7 @@ always @(posedge clk, posedge rst) begin
                     end
                 end
                 IDLE: begin
-                    flush <= !pre_cs;
+                    flush <= 1;
                     if( wr_posedge && drqn ) begin
                         //if( din <= max_snd || !mdn ) begin
                             pre_cs   <= 1;
