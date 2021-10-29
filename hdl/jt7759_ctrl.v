@@ -41,7 +41,7 @@ module jt7759_ctrl(
     output reg        flush
 );
 
-localparam STW = 11;
+localparam STW = 12;
 localparam [STW-1:0] RST    =1<<0;  // 1
 localparam [STW-1:0] IDLE   =1<<1;  // 2
 localparam [STW-1:0] SND_CNT=1<<2;  // 4
@@ -53,6 +53,7 @@ localparam [STW-1:0] LOAD   =1<<7;  // 80
 localparam [STW-1:0] READCMD=1<<8;  // 100
 localparam [STW-1:0] READADR=1<<9;  // 200
 localparam [STW-1:0] SIGN   =1<<10; // 400
+localparam [STW-1:0] DONE   =1<<11; // 800
 
 localparam MTW = 13; // Mute counter 7+6 bits
 
@@ -72,7 +73,7 @@ wire [   16:0] next_rom;
 wire [    1:0] sign_addr = rom_addr[1:0]-2'd1;
 reg            pre_cs, pulse_cs;
 
-assign      write      = cs && (!mdn || !stn );
+assign      write      = cs && ( (!mdn && !wrn) || !stn );
 assign      wr_posedge = !last_wr && write;
 assign      busyn      = st == IDLE || st == RST;
 assign      next_rom   = rom_addr+1'b1;
@@ -138,13 +139,15 @@ always @(posedge clk, posedge rst) begin
                     end
                     else st <= IDLE;
                 end
+                DONE: st <= DONE; // stay here forever
                 // Check the chip signature
                 SIGN: if (cen_ctl) begin
-                    if( !mdn ) begin
-                        st <= READADR;
-                        rom_addr[0] <= ~rom_addr[0];
-                    end else begin
-                        if( rom_ok ) begin
+                    if( rom_ok ) begin
+                        if( !mdn ) begin
+                            pulse_cs <= 1;
+                            st <= READADR;
+                            rom_addr[0] <= 1;
+                        end else begin
                             if( rom_data != sign[sign_addr] ) begin
                                 signok <= 0;
                                 st <= IDLE;
@@ -164,16 +167,19 @@ always @(posedge clk, posedge rst) begin
                     end
                 end
                 IDLE: begin
-                    flush <= 1;
+                    flush <= !pre_cs;
                     if( wr_posedge && drqn ) begin
                         //if( din <= max_snd || !mdn ) begin
                             pre_cs   <= 1;
                             pulse_cs <= 1;
                             rom_addr <= { 7'd0, {1'd0, din} + 9'd2, 1'b1 };
-                            st       <= READADR;
+                            if( !mdn ) begin
+                                st <= SIGN;
+                            end else
+                                st <= READADR;
                         //end
                     end else begin
-                        pre_cs  <= 0;
+                        if( rom_ok ) pre_cs  <= 0;
                         dec_rst <= 1;
                     end
                 end
@@ -194,18 +200,25 @@ always @(posedge clk, posedge rst) begin
                             addr_latch[15:8] <= addr_latch[7:0];
                             addr_latch[ 7:0] <= rom_data;
                             st               <= LOAD;
-                            pre_cs           <= 0;
+                            if( mdn ) begin
+                                pre_cs <= 0;
+                            end else begin
+                                pre_cs <= 1;
+                                pulse_cs <= 1;
+                            end
                         end
                     end
                 end
                 LOAD: if(cen_ctl) begin
-                    rom_addr <= { addr_latch, 1'b1 };
-                    headerok <= 0;
-                    st       <= READCMD;
-                    pre_cs   <= 1;
-                    pulse_cs <= 1;
-                    rep_cnt  <= ~4'd0;
-                    if ( mdn ) flush <= 1;
+                    if( mdn || rom_ok ) begin
+                        rom_addr <= { addr_latch, 1'b1 };
+                        headerok <= 0;
+                        st       <= READCMD;
+                        pre_cs   <= 1;
+                        pulse_cs <= 1;
+                        rep_cnt  <= ~4'd0;
+                        if ( mdn ) flush <= 1;
+                    end
                 end
                 READCMD: if(cen_ctl) begin
                     if( rom_ok ) begin
@@ -223,7 +236,7 @@ always @(posedge clk, posedge rst) begin
                                 `JT7759_SILENCE
                                 mute_cnt <= {rom_data[5:0],7'd0};
                                 if( rom_data==0 && headerok) begin
-                                    st <= IDLE;
+                                    st <= DONE;
                                     dec_rst <= 1;
                                     `JT7759_DONE
                                 end else begin

@@ -41,7 +41,7 @@ module jt7759_data(
     output reg        drqn
 );
 
-reg  [7:0] fifo[4];
+reg  [7:0] fifo[0:3];
 reg  [3:0] fifo_ok;
 reg        drqn_l, ctrl_cs_l;
 reg  [1:0] rd_addr, wr_addr;
@@ -136,7 +136,7 @@ always @(posedge clk, posedge rst) begin
             `endif
         end
 
-        if( ctrl_busyn || ctrl_flush ) begin
+        if(/* ctrl_busyn ||*/ ctrl_flush ) begin
             fifo_ok <= 0;
             rd_addr <= 0;
             wr_addr <= 0;
