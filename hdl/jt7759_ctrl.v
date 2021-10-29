@@ -87,10 +87,10 @@ end
 
 // Simulation log
 `ifdef SIMULATION
-`define JT7759_SILENCE   $display("\tjt7759: read silence");
-`define JT7759_PLAY      $display("\tjt7759: read play");
-`define JT7759_PLAY_LONG $display("\tjt7759: read play n");
-`define JT7759_REPEAT    $display("\tjt7759: read repeat");
+`define JT7759_SILENCE   $display("\tjt7759: silence");
+`define JT7759_PLAY      $display("\tjt7759: play");
+`define JT7759_PLAY_LONG $display("\tjt7759: play n");
+`define JT7759_REPEAT    $display("\tjt7759: repeat");
 `define JT7759_DONE      $display("\tjt7759: sample done");
 `else
 `define JT7759_SILENCE
