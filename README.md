@@ -3,7 +3,7 @@
 Verilog module compatible with NEC ADPCM decoder uPD7759
 
 You can show your appreciation through
-* [Patreon](https://patreon.com/topapate), by supporting releases
+* [Patreon](https://patreon.com/jotego), by supporting releases
 * [Paypal](https://paypal.me/topapate), with a donation
 
 JT775x is an ADPCM sound source written in Verilog, fully compatible with NEC uPD7759.
