@@ -59,7 +59,7 @@ always @(posedge clk, posedge rst) begin
     end else begin
         // Minimum time between DRQn pulses
         if( readin || good )
-            drqn_cnt <= ~0;
+            drqn_cnt <= ~'d0;
         else if( drqn_cnt!=0 && cen_ctl) drqn_cnt <= drqn_cnt-1'd1;
     end
 end
@@ -76,7 +76,7 @@ always @(posedge clk, posedge rst) begin
 
         if( !ctrl_busyn ) begin
             if(!readin && readin_l)
-                rom_addr <= rom_addr + 1;
+                rom_addr <= rom_addr + 1'd1;
             if(fifo_ok==4'hf || (!readin && readin_l) ) begin
                 drqn <= 1;
             end else if(fifo_ok!=4'hf && !readin && drqn_cnt==0 ) begin
@@ -129,7 +129,7 @@ always @(posedge clk, posedge rst) begin
         if( good && readin ) begin
             fifo[ wr_addr ] <= din_mux;
             fifo_ok[ wr_addr ] <= 1;
-            wr_addr <= wr_addr + 1;
+            wr_addr <= wr_addr + 1'd1;
             readin  <= 0;
             `ifdef JT7759_FIFO_DUMP
             $display("\tjt7759: read %X",din_mux);

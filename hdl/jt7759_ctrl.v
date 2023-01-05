@@ -42,18 +42,18 @@ module jt7759_ctrl(
 );
 
 localparam STW = 12;
-localparam [STW-1:0] RST    =1<<0;  // 1
-localparam [STW-1:0] IDLE   =1<<1;  // 2
-localparam [STW-1:0] SND_CNT=1<<2;  // 4
-localparam [STW-1:0] PLAY   =1<<3;  // 8
-localparam [STW-1:0] WAIT   =1<<4;  // 10
-localparam [STW-1:0] GETN   =1<<5;  // 20
-localparam [STW-1:0] MUTED  =1<<6;  // 40
-localparam [STW-1:0] LOAD   =1<<7;  // 80
-localparam [STW-1:0] READCMD=1<<8;  // 100
-localparam [STW-1:0] READADR=1<<9;  // 200
-localparam [STW-1:0] SIGN   =1<<10; // 400
-localparam [STW-1:0] DONE   =1<<11; // 800
+localparam [STW-1:0] RST    = 12'd1<<0;  // 1
+localparam [STW-1:0] IDLE   = 12'd1<<1;  // 2
+localparam [STW-1:0] SND_CNT= 12'd1<<2;  // 4
+localparam [STW-1:0] PLAY   = 12'd1<<3;  // 8
+localparam [STW-1:0] WAIT   = 12'd1<<4;  // 10
+localparam [STW-1:0] GETN   = 12'd1<<5;  // 20
+localparam [STW-1:0] MUTED  = 12'd1<<6;  // 40
+localparam [STW-1:0] LOAD   = 12'd1<<7;  // 80
+localparam [STW-1:0] READCMD= 12'd1<<8;  // 100
+localparam [STW-1:0] READADR= 12'd1<<9;  // 200
+localparam [STW-1:0] SIGN   = 12'd1<<10; // 400
+localparam [STW-1:0] DONE   = 12'd1<<11; // 800
 
 localparam MTW = 13; // Mute counter 7+6 bits
 
