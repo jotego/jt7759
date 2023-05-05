@@ -57,14 +57,14 @@ localparam [STW-1:0] DONE   = 12'd1<<11; // 800
 
 localparam MTW = 13; // Mute counter 7+6 bits
 
-reg  [    7:0] max_snd; // sound count: total number of sound samples
+// reg  [    7:0] max_snd; // sound count: total number of sound samples
 reg  [STW-1:0] st;
 reg  [    3:0] next;
 reg  [MTW-1:0] mute_cnt;
 reg  [    8:0] data_cnt;
 reg  [    3:0] rep_cnt;
 reg  [   15:0] addr_latch;
-reg  [   16:0] rep_latch;
+// reg  [   16:0] rep_latch;
 reg  [    7:0] sign[0:3];
 reg            last_wr, getdiv, headerok;
 reg            signok; // ROM signature ok
@@ -104,7 +104,7 @@ end
 
 always @(posedge clk, posedge rst) begin
     if( rst ) begin
-        max_snd   <= 8'd0;
+        // max_snd   <= 8'd0;
         st        <= RST;
         pre_cs    <= 0;
         rom_addr  <= 17'd0;
@@ -116,7 +116,7 @@ always @(posedge clk, posedge rst) begin
         data_cnt  <= 9'd0;
         signok    <= 0;
         rep_cnt   <= ~4'd0;
-        rep_latch <= 17'd0;
+        // rep_latch <= 17'd0;
         headerok  <= 0;
         addr_latch<= 0;
         pulse_cs  <= 0;
@@ -188,7 +188,7 @@ always @(posedge clk, posedge rst) begin
                 end
                 SND_CNT: begin
                     if( rom_ok ) begin
-                        max_snd <= rom_data;
+                        // max_snd <= rom_data;
                         rom_addr<= next_rom;
                         st      <= SIGN;
                     end
@@ -261,7 +261,7 @@ always @(posedge clk, posedge rst) begin
                             end
                             2'd3: begin // repeat loop
                                 rep_cnt   <= {1'b0, rom_data[2:0]};
-                                rep_latch <= next_rom;
+                                // rep_latch <= next_rom;
                                 `JT7759_REPEAT
                             end
                         endcase
