@@ -99,7 +99,6 @@ jt7759_data u_data(
     .rst        ( rst       ),
     .clk        ( clk       ),
     .cen_ctl    ( cen_ctl   ),
-    .cen_dec    ( cen_dec   ),
     .mdn        ( mdn       ),
     // Control interface
     .ctrl_flush ( ctrl_flush),

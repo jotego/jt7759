@@ -55,7 +55,8 @@ localparam [STW-1:0] READADR= 12'd1<<9;  // 200
 localparam [STW-1:0] SIGN   = 12'd1<<10; // 400
 localparam [STW-1:0] DONE   = 12'd1<<11; // 800
 
-localparam MTW = 13; // Mute counter 7+6 bits
+localparam MTB =  9,    // base count at cen_ctl (1.56us) 1.5625us*512=0.8ms
+           MTW = 6+MTB; // Mute counter
 
 // reg  [    7:0] max_snd; // sound count: total number of sound samples
 reg  [STW-1:0] st;
@@ -237,7 +238,7 @@ always @(posedge clk, posedge rst) begin
                         case( rom_data[7:6] )
                             2'd0: begin // Silence
                                 `JT7759_SILENCE
-                                mute_cnt <= {rom_data[5:0],7'd0};
+                                mute_cnt <= {rom_data[5:0],{MTB{1'b0}}};
                                 if( rom_data==0 && headerok) begin
                                     st <= DONE;
                                     dec_rst <= 1;

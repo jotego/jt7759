@@ -25,10 +25,10 @@ module jt7759_div(
 );
 
 reg [1:0] cnt4;
-reg [5:0] decdiv, ctldiv, divby_l;
-wire      eoc_ctl, eoc_dec, eoc_cnt; //  end of count
+reg [5:0] decdiv, /*ctldiv,*/ divby_l;
+wire      /*eoc_ctl,*/ eoc_dec, eoc_cnt; //  end of count
 
-assign eoc_ctl = ctldiv == { 1'b0, divby_l[5:1] };
+// assign eoc_ctl = ctldiv == { 1'b0, divby_l[5:1] };
 assign eoc_dec = decdiv == divby_l;
 assign eoc_cnt = &cnt4;
 
@@ -37,7 +37,7 @@ initial begin
     cnt4   = 2'd0;
     divby_l= 0;
     decdiv = 6'd3; // bad start numbers to show the auto allignment feature
-    ctldiv = 6'd7;
+    //ctldiv = 6'd7;
 end
 `endif
 
@@ -47,7 +47,7 @@ always @(posedge clk) if(cen) begin
         decdiv <= eoc_dec ? 6'd0 : (decdiv+1'd1);
         if( eoc_dec ) divby_l <= divby < 6'd9 ? 6'd9 : divby; // The divider is updated only at EOC
     end
-    ctldiv <= eoc_ctl || (eoc_dec && eoc_cnt) ? 6'd0 : (ctldiv+1'd1);
+    // ctldiv <= eoc_ctl || (eoc_dec && eoc_cnt) ? 6'd0 : (ctldiv+1'd1);
 end
 
 always @(posedge clk) begin

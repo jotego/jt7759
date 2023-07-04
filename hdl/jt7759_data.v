@@ -20,7 +20,6 @@ module jt7759_data(
     input             rst,
     input             clk,
     input             cen_ctl,
-    input             cen_dec,
     input             mdn,
     // Control interface
     input             ctrl_flush,
