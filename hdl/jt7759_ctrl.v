@@ -68,7 +68,7 @@ reg  [   15:0] addr_latch;
 // reg  [   16:0] rep_latch;
 reg  [    7:0] sign[0:3];
 reg            last_wr, getdiv, headerok;
-reg            signok; // ROM signature ok
+// reg            signok; // ROM signature ok
 wire           write, wr_posedge;
 wire [   16:0] next_rom;
 wire [    1:0] sign_addr = rom_addr[1:0]-2'd1;
@@ -115,7 +115,7 @@ always @(posedge clk, posedge rst) begin
         dec_din   <= 4'd0;
         mute_cnt  <= 0;
         data_cnt  <= 9'd0;
-        signok    <= 0;
+        // signok    <= 0;
         rep_cnt   <= ~4'd0;
         // rep_latch <= 17'd0;
         headerok  <= 0;
@@ -153,7 +153,7 @@ always @(posedge clk, posedge rst) begin
                             rom_addr[0] <= 1;
                         end else begin
                             if( rom_data != sign[sign_addr] ) begin
-                                signok <= 0;
+                                // signok <= 0;
                                 st <= IDLE;
                                 `ifdef SIMULATION
                                 $display("Wrong ROM assigned to jt7759");
@@ -162,7 +162,7 @@ always @(posedge clk, posedge rst) begin
                             end
                             else begin
                                 if( &sign_addr ) begin
-                                    signok <= 1;
+                                    // signok <= 1;
                                     st<=IDLE;
                                 end
                                 rom_addr<= next_rom;

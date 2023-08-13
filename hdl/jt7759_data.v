@@ -44,7 +44,7 @@ reg  [7:0] fifo[0:3];
 reg  [3:0] fifo_ok;
 reg        drqn_l, ctrl_cs_l;
 reg  [1:0] rd_addr, wr_addr;
-reg        readin, readout, readin_l, good_l;
+reg        readin, readout, readin_l;
 reg  [4:0] drqn_cnt;
 
 wire       good    = mdn ? rom_ok & ~drqn_l & ~drqn : (cs&~wrn);
@@ -68,10 +68,8 @@ always @(posedge clk, posedge rst) begin
         rom_addr <= 0;
         drqn     <= 1;
         readin_l <= 0;
-        good_l   <= 0;
     end else begin
         readin_l <= readin;
-        good_l   <= good;
 
         if( !ctrl_busyn ) begin
             if(!readin && readin_l)
