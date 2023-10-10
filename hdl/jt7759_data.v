@@ -58,7 +58,7 @@ always @(posedge clk, posedge rst) begin
     end else begin
         // Minimum time between DRQn pulses
         if( readin || good )
-            drqn_cnt <= ~'d0;
+            drqn_cnt <= ~5'd0;
         else if( drqn_cnt!=0 && cen_ctl) drqn_cnt <= drqn_cnt-1'd1;
     end
 end
