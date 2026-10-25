@@ -134,6 +134,7 @@ always @(posedge clk, posedge rst) begin
         end
 
         if( ctrl_busyn || ctrl_flush ) begin
+            readin  <= 0; // cancel pending reads when discarding the FIFO
             fifo_ok <= 0;
             rd_addr <= 0;
             wr_addr <= 0;
