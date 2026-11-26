@@ -17,6 +17,7 @@
     Date: 5-7-2020 */
 
 module jt7759_div(
+    input            rst,
     input            clk,
     input            cen,  // 640kHz
     input      [5:0] divby,
@@ -41,13 +42,19 @@ initial begin
 end
 `endif
 
-always @(posedge clk) if(cen) begin
-    cnt4   <= cnt4+2'd1;
-    if( eoc_cnt ) begin
-        decdiv <= eoc_dec ? 6'd0 : (decdiv+1'd1);
-        if( eoc_dec ) divby_l <= divby < 6'd9 ? 6'd9 : divby; // The divider is updated only at EOC
+always @(posedge clk, posedge rst) begin
+    if( rst ) begin
+        cnt4    <= 0;
+        decdiv  <= 0;
+        divby_l <= 0;
+    end else if(cen) begin
+        cnt4   <= cnt4+2'd1;
+        if( eoc_cnt ) begin
+            decdiv <= eoc_dec ? 6'd0 : (decdiv+1'd1);
+            if( eoc_dec ) divby_l <= divby < 6'd9 ? 6'd9 : divby; // The divider is updated only at EOC
+        end
+        // ctldiv <= eoc_ctl || (eoc_dec && eoc_cnt) ? 6'd0 : (ctldiv+1'd1);
     end
-    // ctldiv <= eoc_ctl || (eoc_dec && eoc_cnt) ? 6'd0 : (ctldiv+1'd1);
 end
 
 always @(posedge clk) begin

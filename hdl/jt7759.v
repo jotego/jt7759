@@ -63,6 +63,7 @@ wire   [ 7:0] ctrl_din;
 `endif
 
 jt7759_div u_div(
+    .rst        ( rst       ),
     .clk        ( clk       ),
     .cen        ( cen       ),
     .cen_ctl    ( cen_ctl   ),
